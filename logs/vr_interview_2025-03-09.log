@@ -1,0 +1,211 @@
+[2025-03-09 01:13:09,855] [INFO] [root] - Logging initialized at level INFO
+[2025-03-09 01:13:09,856] [INFO] [stt] - Initializing STT service with model: base
+[2025-03-09 01:13:09,857] [INFO] [tts] - Initializing TTS service with model: gtts
+[2025-03-09 01:13:09,857] [INFO] [ollama] - Initialized Ollama client for model: phi
+[2025-03-09 01:19:59,793] [INFO] [root] - Logging initialized at level INFO
+[2025-03-09 01:19:59,794] [INFO] [stt] - Initializing STT service with model: base
+[2025-03-09 01:19:59,795] [INFO] [tts] - Initializing TTS service with model: gtts
+[2025-03-09 01:19:59,795] [INFO] [ollama] - Initialized Ollama client for model: phi
+[2025-03-09 01:23:21,524] [INFO] [root] - Logging initialized at level INFO
+[2025-03-09 01:23:21,525] [INFO] [stt] - Initializing STT service with model: base
+[2025-03-09 01:23:21,525] [INFO] [tts] - Initializing TTS service with model: gtts
+[2025-03-09 01:23:21,526] [INFO] [ollama] - Initialized Ollama client for model: phi
+[2025-03-09 01:25:10,689] [INFO] [root] - Logging initialized at level INFO
+[2025-03-09 01:25:10,689] [INFO] [stt] - Initializing STT service with model: base
+[2025-03-09 01:25:10,690] [INFO] [tts] - Initializing TTS service with model: gtts
+[2025-03-09 01:25:10,690] [INFO] [ollama] - Initialized Ollama client for model: phi
+[2025-03-09 01:26:49,876] [INFO] [root] - Logging initialized at level INFO
+[2025-03-09 01:26:49,877] [INFO] [stt] - Initializing STT service with model: base
+[2025-03-09 01:26:49,877] [INFO] [tts] - Initializing TTS service with model: gtts
+[2025-03-09 01:26:49,877] [INFO] [ollama] - Initialized Ollama client for model: phi
+[2025-03-09 01:26:49,877] [INFO] [server] - Signal handlers registered
+[2025-03-09 01:26:49,877] [INFO] [server] - Server initialized
+[2025-03-09 01:26:49,878] [INFO] [server] - Starting server on 0.0.0.0:8765
+[2025-03-09 01:26:49,879] [INFO] [websocket] - WebSocket server started on 0.0.0.0:8765
+[2025-03-09 01:27:16,950] [INFO] [websocket] - New connection established: c5e5b2a6-0056-4ac6-9e46-70de49455e45
+[2025-03-09 01:27:16,950] [INFO] [state_manager] - Created new session: c5e5b2a6-0056-4ac6-9e46-70de49455e45
+[2025-03-09 01:29:31,419] [INFO] [server] - Received signal 2, initiating shutdown...
+[2025-03-09 01:29:31,419] [INFO] [server] - Exiting...
+[2025-03-09 01:29:39,408] [INFO] [root] - Logging initialized at level INFO
+[2025-03-09 01:29:39,408] [INFO] [stt] - Initializing STT service with model: base
+[2025-03-09 01:29:39,409] [INFO] [tts] - Initializing TTS service with model: gtts
+[2025-03-09 01:29:39,409] [INFO] [ollama] - Initialized Ollama client for model: phi
+[2025-03-09 01:29:39,409] [INFO] [server] - Signal handlers registered
+[2025-03-09 01:29:39,410] [INFO] [server] - Server initialized
+[2025-03-09 01:29:39,410] [INFO] [server] - Starting server on 0.0.0.0:8765
+[2025-03-09 01:29:39,411] [INFO] [websocket] - WebSocket server started on 0.0.0.0:8765
+[2025-03-09 01:29:51,580] [INFO] [websocket] - New connection established: ee2f7603-465f-4e5a-a295-5dae1062589a
+[2025-03-09 01:29:51,581] [INFO] [state_manager] - Created new session: ee2f7603-465f-4e5a-a295-5dae1062589a
+[2025-03-09 01:29:51,581] [INFO] [state_manager] - State transition: ee2f7603-465f-4e5a-a295-5dae1062589a: IDLE to IDLE
+[2025-03-09 01:30:02,395] [INFO] [state_manager] - Ended session: ee2f7603-465f-4e5a-a295-5dae1062589a
+[2025-03-09 01:30:18,685] [INFO] [websocket] - New connection established: 8151840e-a717-4a1c-9303-e1792e1eecf9
+[2025-03-09 01:30:18,685] [INFO] [state_manager] - Created new session: 8151840e-a717-4a1c-9303-e1792e1eecf9
+[2025-03-09 01:30:18,686] [INFO] [state_manager] - State transition: 8151840e-a717-4a1c-9303-e1792e1eecf9: IDLE to IDLE
+[2025-03-09 01:30:28,092] [INFO] [state_manager] - Ended session: 8151840e-a717-4a1c-9303-e1792e1eecf9
+[2025-03-09 01:30:29,324] [INFO] [server] - Received signal 2, initiating shutdown...
+[2025-03-09 01:30:29,324] [INFO] [server] - Exiting...
+[2025-03-09 01:30:32,674] [INFO] [root] - Logging initialized at level INFO
+[2025-03-09 01:30:32,674] [INFO] [stt] - Initializing STT service with model: base
+[2025-03-09 01:30:32,675] [INFO] [tts] - Initializing TTS service with model: gtts
+[2025-03-09 01:30:32,675] [INFO] [ollama] - Initialized Ollama client for model: phi
+[2025-03-09 01:30:32,675] [INFO] [server] - Signal handlers registered
+[2025-03-09 01:30:32,675] [INFO] [server] - Server initialized
+[2025-03-09 01:30:32,676] [INFO] [server] - Starting server on 0.0.0.0:8765
+[2025-03-09 01:30:32,677] [INFO] [websocket] - WebSocket server started on 0.0.0.0:8765
+[2025-03-09 01:30:40,909] [INFO] [websocket] - New connection established: 392107d2-959b-4b4d-9a59-97164876a57a
+[2025-03-09 01:30:40,910] [INFO] [state_manager] - Created new session: 392107d2-959b-4b4d-9a59-97164876a57a
+[2025-03-09 01:30:40,910] [INFO] [state_manager] - State transition: 392107d2-959b-4b4d-9a59-97164876a57a: IDLE to IDLE
+[2025-03-09 01:31:41,148] [INFO] [state_manager] - Ended session: 392107d2-959b-4b4d-9a59-97164876a57a
+[2025-03-09 01:31:49,282] [INFO] [websocket] - New connection established: 50724fa2-0729-4805-bee3-c80eb40dacad
+[2025-03-09 01:31:49,282] [INFO] [state_manager] - Created new session: 50724fa2-0729-4805-bee3-c80eb40dacad
+[2025-03-09 01:31:49,282] [INFO] [state_manager] - State transition: 50724fa2-0729-4805-bee3-c80eb40dacad: IDLE to IDLE
+[2025-03-09 01:31:51,468] [INFO] [state_manager] - Ended session: 50724fa2-0729-4805-bee3-c80eb40dacad
+[2025-03-09 01:32:01,685] [INFO] [websocket] - New connection established: c345c7ca-a438-4a60-a4e8-aa3974effcef
+[2025-03-09 01:32:01,685] [INFO] [state_manager] - Created new session: c345c7ca-a438-4a60-a4e8-aa3974effcef
+[2025-03-09 01:32:01,687] [INFO] [state_manager] - State transition: c345c7ca-a438-4a60-a4e8-aa3974effcef: IDLE to IDLE
+[2025-03-09 01:32:03,710] [INFO] [state_manager] - State transition: c345c7ca-a438-4a60-a4e8-aa3974effcef: IDLE to LISTENING
+[2025-03-09 01:32:03,711] [INFO] [state_manager] - State transition: c345c7ca-a438-4a60-a4e8-aa3974effcef: LISTENING to PROCESSING
+[2025-03-09 01:32:03,712] [INFO] [stt] - Loading Whisper model: base
+[2025-03-09 01:32:04,564] [INFO] [stt] - Whisper model loaded successfully
+[2025-03-09 01:32:05,188] [INFO] [stt] - Transcription complete: 98 characters
+[2025-03-09 01:32:05,188] [INFO] [websocket] - Transcription: Hello, I'm interested in the software engineering position. Could you tell me more about the role?
+[2025-03-09 01:32:05,189] [INFO] [state_manager] - State transition: c345c7ca-a438-4a60-a4e8-aa3974effcef: PROCESSING to PROCESSING
+[2025-03-09 01:32:08,958] [INFO] [ollama] - Response generated in 3.77s
+[2025-03-09 01:32:08,959] [INFO] [websocket] - LLM Response:  Of course! The software engineering position we're currently hiring for involves designing and implementing complex systems using programming languages such as Java, Python, or C++. This includes tasks like building web applications, developing mobile apps, or working on machine learning projects. Would you like to know more about the specific responsibilities of this role?
+
+[2025-03-09 01:32:08,960] [INFO] [state_manager] - State transition: c345c7ca-a438-4a60-a4e8-aa3974effcef: PROCESSING to PROCESSING
+[2025-03-09 01:32:08,960] [INFO] [tts] - Synthesizing with gTTS: 378 characters
+[2025-03-09 01:32:13,407] [INFO] [tts] - Synthesis complete: 225792 bytes
+[2025-03-09 01:32:13,408] [INFO] [state_manager] - State transition: c345c7ca-a438-4a60-a4e8-aa3974effcef: PROCESSING to RESPONDING
+[2025-03-09 01:32:13,930] [INFO] [state_manager] - State transition: c345c7ca-a438-4a60-a4e8-aa3974effcef: RESPONDING to WAITING
+[2025-03-09 01:32:42,111] [INFO] [websocket] - Connection closed: c345c7ca-a438-4a60-a4e8-aa3974effcef
+[2025-03-09 01:32:42,111] [INFO] [state_manager] - Ended session: c345c7ca-a438-4a60-a4e8-aa3974effcef
+[2025-03-09 01:33:01,492] [INFO] [websocket] - New connection established: b2900142-81fd-4574-985a-e425dd8e34a6
+[2025-03-09 01:33:01,492] [INFO] [state_manager] - Created new session: b2900142-81fd-4574-985a-e425dd8e34a6
+[2025-03-09 01:33:01,493] [INFO] [state_manager] - State transition: b2900142-81fd-4574-985a-e425dd8e34a6: IDLE to IDLE
+[2025-03-09 01:33:03,515] [INFO] [state_manager] - State transition: b2900142-81fd-4574-985a-e425dd8e34a6: IDLE to LISTENING
+[2025-03-09 01:33:03,516] [INFO] [state_manager] - State transition: b2900142-81fd-4574-985a-e425dd8e34a6: LISTENING to PROCESSING
+[2025-03-09 01:33:03,785] [INFO] [stt] - Transcription complete: 98 characters
+[2025-03-09 01:33:03,785] [INFO] [websocket] - Transcription: Hello, I'm interested in the software engineering position. Could you tell me more about the role?
+[2025-03-09 01:33:03,786] [INFO] [state_manager] - State transition: b2900142-81fd-4574-985a-e425dd8e34a6: PROCESSING to PROCESSING
+[2025-03-09 01:33:06,138] [INFO] [ollama] - Response generated in 2.35s
+[2025-03-09 01:33:06,139] [INFO] [websocket] - LLM Response:  Sure, let's talk about the software engineering position. What are your thoughts on this role and how does it align with your career goals? 
+
+[2025-03-09 01:33:06,139] [INFO] [state_manager] - State transition: b2900142-81fd-4574-985a-e425dd8e34a6: PROCESSING to PROCESSING
+[2025-03-09 01:33:06,140] [INFO] [tts] - Synthesizing with gTTS: 142 characters
+[2025-03-09 01:33:07,514] [INFO] [tts] - Synthesis complete: 73920 bytes
+[2025-03-09 01:33:07,515] [INFO] [state_manager] - State transition: b2900142-81fd-4574-985a-e425dd8e34a6: PROCESSING to RESPONDING
+[2025-03-09 01:33:08,030] [INFO] [state_manager] - State transition: b2900142-81fd-4574-985a-e425dd8e34a6: RESPONDING to WAITING
+[2025-03-09 01:33:34,393] [INFO] [state_manager] - Ended session: b2900142-81fd-4574-985a-e425dd8e34a6
+[2025-03-09 01:33:35,867] [INFO] [server] - Received signal 2, initiating shutdown...
+[2025-03-09 01:33:35,867] [INFO] [server] - Exiting...
+[2025-03-09 01:33:49,151] [INFO] [root] - Logging initialized at level INFO
+[2025-03-09 01:33:49,152] [INFO] [stt] - Initializing STT service with model: base
+[2025-03-09 01:33:49,152] [INFO] [tts] - Initializing TTS service with model: gtts
+[2025-03-09 01:33:49,152] [INFO] [ollama] - Initialized Ollama client for model: phi
+[2025-03-09 01:33:49,152] [INFO] [server] - Signal handlers registered
+[2025-03-09 01:33:49,153] [INFO] [server] - Server initialized
+[2025-03-09 01:33:49,153] [INFO] [server] - Starting server on 0.0.0.0:8765
+[2025-03-09 01:33:49,154] [INFO] [websocket] - WebSocket server started on 0.0.0.0:8765
+[2025-03-09 01:33:56,200] [INFO] [websocket] - New connection established: 43b44bf6-8146-44b1-8ced-03c386df1142
+[2025-03-09 01:33:56,201] [INFO] [state_manager] - Created new session: 43b44bf6-8146-44b1-8ced-03c386df1142
+[2025-03-09 01:33:56,201] [INFO] [state_manager] - State transition: 43b44bf6-8146-44b1-8ced-03c386df1142: IDLE to IDLE
+[2025-03-09 01:33:58,228] [INFO] [state_manager] - State transition: 43b44bf6-8146-44b1-8ced-03c386df1142: IDLE to LISTENING
+[2025-03-09 01:33:58,229] [INFO] [state_manager] - State transition: 43b44bf6-8146-44b1-8ced-03c386df1142: LISTENING to PROCESSING
+[2025-03-09 01:33:58,230] [INFO] [stt] - Loading Whisper model: base
+[2025-03-09 01:33:59,074] [INFO] [stt] - Whisper model loaded successfully
+[2025-03-09 01:33:59,600] [INFO] [stt] - Transcription complete: 98 characters
+[2025-03-09 01:33:59,601] [INFO] [websocket] - Transcription: Hello, I'm interested in the software engineering position. Could you tell me more about the role?
+[2025-03-09 01:33:59,601] [INFO] [state_manager] - State transition: 43b44bf6-8146-44b1-8ced-03c386df1142: PROCESSING to PROCESSING
+[2025-03-09 01:34:01,991] [INFO] [ollama] - Response generated in 2.39s
+[2025-03-09 01:34:01,992] [INFO] [websocket] - LLM Response:  Sure! The software engineering position involves designing and developing software solutions for clients. You'll be responsible for meeting specific project deadlines while adhering to industry standards and best practices. 
+
+
+[2025-03-09 01:34:01,992] [INFO] [state_manager] - State transition: 43b44bf6-8146-44b1-8ced-03c386df1142: PROCESSING to PROCESSING
+[2025-03-09 01:34:01,992] [INFO] [tts] - Synthesizing with gTTS: 227 characters
+[2025-03-09 01:34:03,671] [INFO] [tts] - Synthesis complete: 130176 bytes
+[2025-03-09 01:34:03,673] [INFO] [state_manager] - State transition: 43b44bf6-8146-44b1-8ced-03c386df1142: PROCESSING to RESPONDING
+[2025-03-09 01:34:04,183] [INFO] [state_manager] - State transition: 43b44bf6-8146-44b1-8ced-03c386df1142: RESPONDING to WAITING
+[2025-03-09 01:34:29,468] [INFO] [state_manager] - Ended session: 43b44bf6-8146-44b1-8ced-03c386df1142
+[2025-03-09 01:34:30,732] [INFO] [server] - Received signal 2, initiating shutdown...
+[2025-03-09 01:34:30,732] [INFO] [server] - Exiting...
+[2025-03-09 01:36:56,614] [INFO] [root] - Logging initialized at level INFO
+[2025-03-09 01:36:56,614] [INFO] [stt] - Initializing STT service with model: base
+[2025-03-09 01:36:56,615] [INFO] [tts] - Initializing TTS service with model: gtts
+[2025-03-09 01:36:56,615] [INFO] [ollama] - Initialized Ollama client for model: phi
+[2025-03-09 01:36:56,615] [INFO] [server] - Signal handlers registered
+[2025-03-09 01:36:56,615] [INFO] [server] - Server initialized
+[2025-03-09 01:36:56,616] [INFO] [server] - Starting server on 0.0.0.0:8765
+[2025-03-09 01:36:56,617] [INFO] [websocket] - WebSocket server started on 0.0.0.0:8765
+[2025-03-09 01:37:08,161] [INFO] [websocket] - New connection established: 967848cb-707e-4161-bc2b-cacb4d301d1b
+[2025-03-09 01:37:08,162] [INFO] [state_manager] - Created new session: 967848cb-707e-4161-bc2b-cacb4d301d1b
+[2025-03-09 01:37:08,162] [INFO] [state_manager] - State transition: 967848cb-707e-4161-bc2b-cacb4d301d1b: IDLE to IDLE
+[2025-03-09 01:37:10,193] [INFO] [state_manager] - State transition: 967848cb-707e-4161-bc2b-cacb4d301d1b: IDLE to LISTENING
+[2025-03-09 01:37:10,194] [INFO] [state_manager] - State transition: 967848cb-707e-4161-bc2b-cacb4d301d1b: LISTENING to PROCESSING
+[2025-03-09 01:37:10,195] [INFO] [stt] - Loading Whisper model: base
+[2025-03-09 01:37:11,036] [INFO] [stt] - Whisper model loaded successfully
+[2025-03-09 01:37:11,550] [INFO] [stt] - Transcription complete: 98 characters
+[2025-03-09 01:37:11,551] [INFO] [websocket] - Transcription: Hello, I'm interested in the software engineering position. Could you tell me more about the role?
+[2025-03-09 01:37:11,551] [INFO] [state_manager] - State transition: 967848cb-707e-4161-bc2b-cacb4d301d1b: PROCESSING to PROCESSING
+[2025-03-09 01:37:14,289] [INFO] [ollama] - Response generated in 2.74s
+[2025-03-09 01:37:14,290] [INFO] [websocket] - LLM Response:  
+Hello! Thank you for your interest in our company and our software engineering position. The role of a software engineer involves designing, developing, testing, and maintaining software applications. This includes creating user-friendly interfaces, writing efficient code, and collaborating with teams to bring new ideas to life. We are looking for someone who is passionate about technology and has the skills to innovate in this fast-paced industry.
+
+[2025-03-09 01:37:14,290] [INFO] [state_manager] - State transition: 967848cb-707e-4161-bc2b-cacb4d301d1b: PROCESSING to PROCESSING
+[2025-03-09 01:37:14,290] [INFO] [tts] - Synthesizing with gTTS: 455 characters
+[2025-03-09 01:37:18,792] [INFO] [tts] - Synthesis complete: 259584 bytes
+[2025-03-09 01:37:18,793] [INFO] [state_manager] - State transition: 967848cb-707e-4161-bc2b-cacb4d301d1b: PROCESSING to RESPONDING
+[2025-03-09 01:37:19,314] [INFO] [state_manager] - State transition: 967848cb-707e-4161-bc2b-cacb4d301d1b: RESPONDING to WAITING
+[2025-03-09 01:37:51,586] [INFO] [websocket] - Connection closed: 967848cb-707e-4161-bc2b-cacb4d301d1b
+[2025-03-09 01:37:51,587] [INFO] [state_manager] - Ended session: 967848cb-707e-4161-bc2b-cacb4d301d1b
+[2025-03-09 01:37:56,638] [INFO] [websocket] - New connection established: df5ae8a6-bb1f-4d41-a135-3a650a92d634
+[2025-03-09 01:37:56,639] [INFO] [state_manager] - Created new session: df5ae8a6-bb1f-4d41-a135-3a650a92d634
+[2025-03-09 01:37:56,639] [INFO] [state_manager] - State transition: df5ae8a6-bb1f-4d41-a135-3a650a92d634: IDLE to IDLE
+[2025-03-09 01:37:58,670] [INFO] [state_manager] - State transition: df5ae8a6-bb1f-4d41-a135-3a650a92d634: IDLE to LISTENING
+[2025-03-09 01:37:58,671] [INFO] [state_manager] - State transition: df5ae8a6-bb1f-4d41-a135-3a650a92d634: LISTENING to PROCESSING
+[2025-03-09 01:37:58,940] [INFO] [stt] - Transcription complete: 111 characters
+[2025-03-09 01:37:58,941] [INFO] [websocket] - Transcription: I have experience with Python and JavaScript. I've worked on several web applications using React and Node. JS.
+[2025-03-09 01:37:58,942] [INFO] [state_manager] - State transition: df5ae8a6-bb1f-4d41-a135-3a650a92d634: PROCESSING to PROCESSING
+[2025-03-09 01:38:01,101] [INFO] [ollama] - Response generated in 2.16s
+[2025-03-09 01:38:01,101] [INFO] [websocket] - LLM Response:  What other programming languages do you know?
+
+[2025-03-09 01:38:01,101] [INFO] [state_manager] - State transition: df5ae8a6-bb1f-4d41-a135-3a650a92d634: PROCESSING to PROCESSING
+[2025-03-09 01:38:01,102] [INFO] [tts] - Synthesizing with gTTS: 47 characters
+[2025-03-09 01:38:01,498] [INFO] [tts] - Synthesis complete: 23808 bytes
+[2025-03-09 01:38:01,499] [INFO] [state_manager] - State transition: df5ae8a6-bb1f-4d41-a135-3a650a92d634: PROCESSING to RESPONDING
+[2025-03-09 01:38:02,014] [INFO] [state_manager] - State transition: df5ae8a6-bb1f-4d41-a135-3a650a92d634: RESPONDING to WAITING
+[2025-03-09 01:40:21,004] [INFO] [state_manager] - Ended session: df5ae8a6-bb1f-4d41-a135-3a650a92d634
+[2025-03-09 01:40:25,292] [INFO] [websocket] - New connection established: 22af5382-4909-40ea-941a-5eea73e3dfef
+[2025-03-09 01:40:25,292] [INFO] [state_manager] - Created new session: 22af5382-4909-40ea-941a-5eea73e3dfef
+[2025-03-09 01:40:25,293] [INFO] [state_manager] - State transition: 22af5382-4909-40ea-941a-5eea73e3dfef: IDLE to IDLE
+[2025-03-09 01:40:27,315] [INFO] [state_manager] - State transition: 22af5382-4909-40ea-941a-5eea73e3dfef: IDLE to LISTENING
+[2025-03-09 01:40:27,316] [INFO] [state_manager] - State transition: 22af5382-4909-40ea-941a-5eea73e3dfef: LISTENING to PROCESSING
+[2025-03-09 01:40:27,562] [INFO] [stt] - Transcription complete: 98 characters
+[2025-03-09 01:40:27,562] [INFO] [websocket] - Transcription: Hello, I'm interested in the software engineering position. Could you tell me more about the role?
+[2025-03-09 01:40:27,563] [INFO] [state_manager] - State transition: 22af5382-4909-40ea-941a-5eea73e3dfef: PROCESSING to PROCESSING
+[2025-03-09 01:40:30,412] [INFO] [ollama] - Response generated in 2.85s
+[2025-03-09 01:40:30,413] [INFO] [websocket] - LLM Response:  Certainly! The software engineering position involves working on developing and maintaining various software applications for our company. You'll work closely with a team of experienced engineers to develop innovative solutions that meet the needs of our clients. Your responsibilities will include analyzing requirements, designing and coding software, testing and debugging code, and collaborating with other teams to implement new features. This role requires strong problem-solving skills, attention to detail, and excellent communication abilities.
+
+[2025-03-09 01:40:30,413] [INFO] [state_manager] - State transition: 22af5382-4909-40ea-941a-5eea73e3dfef: PROCESSING to PROCESSING
+[2025-03-09 01:40:30,413] [INFO] [tts] - Synthesizing with gTTS: 555 characters
+[2025-03-09 01:40:35,428] [INFO] [tts] - Synthesis complete: 316032 bytes
+[2025-03-09 01:40:35,429] [INFO] [state_manager] - State transition: 22af5382-4909-40ea-941a-5eea73e3dfef: PROCESSING to RESPONDING
+[2025-03-09 01:40:35,952] [INFO] [state_manager] - State transition: 22af5382-4909-40ea-941a-5eea73e3dfef: RESPONDING to WAITING
+[2025-03-09 01:41:15,286] [INFO] [websocket] - Connection closed: 22af5382-4909-40ea-941a-5eea73e3dfef
+[2025-03-09 01:41:15,286] [INFO] [state_manager] - Ended session: 22af5382-4909-40ea-941a-5eea73e3dfef
+[2025-03-09 01:41:20,342] [INFO] [websocket] - New connection established: bd08bb3a-2144-40de-a606-6ce7258b3776
+[2025-03-09 01:41:20,342] [INFO] [state_manager] - Created new session: bd08bb3a-2144-40de-a606-6ce7258b3776
+[2025-03-09 01:41:20,343] [INFO] [state_manager] - State transition: bd08bb3a-2144-40de-a606-6ce7258b3776: IDLE to IDLE
+[2025-03-09 01:41:22,374] [INFO] [state_manager] - State transition: bd08bb3a-2144-40de-a606-6ce7258b3776: IDLE to LISTENING
+[2025-03-09 01:41:22,376] [INFO] [state_manager] - State transition: bd08bb3a-2144-40de-a606-6ce7258b3776: LISTENING to PROCESSING
+[2025-03-09 01:41:22,628] [INFO] [stt] - Transcription complete: 111 characters
+[2025-03-09 01:41:22,629] [INFO] [websocket] - Transcription: I have experience with Python and JavaScript. I've worked on several web applications using React and Node. JS.
+[2025-03-09 01:41:22,629] [INFO] [state_manager] - State transition: bd08bb3a-2144-40de-a606-6ce7258b3776: PROCESSING to PROCESSING
+[2025-03-09 01:41:24,932] [INFO] [ollama] - Response generated in 2.30s
+[2025-03-09 01:41:24,933] [INFO] [websocket] - LLM Response:  That's great to hear! Could you elaborate on the web applications that you've worked on?
+
+[2025-03-09 01:41:24,933] [INFO] [state_manager] - State transition: bd08bb3a-2144-40de-a606-6ce7258b3776: PROCESSING to PROCESSING
+[2025-03-09 01:41:24,933] [INFO] [tts] - Synthesizing with gTTS: 90 characters
+[2025-03-09 01:41:25,405] [INFO] [tts] - Synthesis complete: 43776 bytes
+[2025-03-09 01:41:25,405] [INFO] [state_manager] - State transition: bd08bb3a-2144-40de-a606-6ce7258b3776: PROCESSING to RESPONDING
+[2025-03-09 01:41:25,917] [INFO] [state_manager] - State transition: bd08bb3a-2144-40de-a606-6ce7258b3776: RESPONDING to WAITING
