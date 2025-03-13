@@ -1,54 +1,115 @@
 #!/usr/bin/env python3
+"""
+Enhanced VR Interview Server
+
+This version includes improved error handling, heartbeat mechanism,
+and optimized async architecture to prevent blocking during LLM processing.
+"""
+
 import asyncio
 import json
 import logging
 import signal
 import sys
 import os
+import time
 from pathlib import Path
 
-from app.websocket.server import WebSocketServer, HeartbeatService
+# Import core components
+from app.websocket.server_enhanced import WebSocketServer
 from app.state.manager import StateManager
 from services.audio.stt import STTService
 from services.audio.tts import TTSService
+from services.audio.alltalk_tts import AllTalkTTSService
 from services.llm.ollama_client import OllamaClient
 from app.utils.logging import setup_logging
 from app.utils.config import load_config
-from app.error_handler import ErrorHandler
+from app.utils.error_handler import ErrorHandler
+from app.utils.heartbeat import HeartbeatService
 
 
-class Server:
-    def __init__(self):
+class EnhancedServer:
+    """
+    Enhanced server with improved async architecture and error handling.
+    
+    This server uses the enhanced WebSocket implementation that prevents
+    blocking during LLM operations and provides better error recovery.
+    """
+    
+    def __init__(self, config_path="config_enhanced.json"):
         # Load configuration
-        self.config = load_config()
+        self.config = self._load_config(config_path)
         
         # Setup logging
         setup_logging(self.config["server"].get("log_level", "INFO"))
-        self.logger = logging.getLogger("server")
+        self.logger = logging.getLogger("enhanced_server")
         
         # Create directories if they don't exist
         self._setup_directories()
         
-        # Initialize components
-        self.state_manager = StateManager()
-        self.stt_service = STTService(self.config["audio"]["stt_model"])
-        self.tts_service = TTSService(self.config["audio"]["tts_model"])
-        self.llm_client = OllamaClient(
-            self.config["ollama"]["url"],
-            self.config["ollama"]["model"],
-            self.config["ollama"]["context_length"]
-        )
-        
-        # Initialize support services
+        # Initialize support services first
         self.error_handler = ErrorHandler()
-        self.heartbeat_service = HeartbeatService(
-            heartbeat_interval=self.config.get("heartbeat_interval", 5.0)
-        )
         
+        # Initialize heartbeat service if enabled
+        heartbeat_config = self.config.get("heartbeat", {})
+        if heartbeat_config.get("enabled", True):
+            self.heartbeat_service = HeartbeatService(
+                heartbeat_interval=heartbeat_config.get("interval", 5.0)
+            )
+            self.logger.info(
+                f"Heartbeat service enabled with interval: "
+                f"{heartbeat_config.get('interval', 5.0)}s"
+            )
+        else:
+            self.heartbeat_service = None
+            self.logger.info("Heartbeat service disabled")
+            
         # Register error recovery handlers
         self._register_error_handlers()
         
-        # Initialize WebSocket server with references to other components
+        # Initialize core components
+        self.state_manager = StateManager()
+        self.stt_service = STTService(self.config["audio"]["stt_model"])
+        
+        # Choose TTS service based on configuration
+        alltalk_config = self.config.get("alltalk", {})
+        use_alltalk = alltalk_config.get("url") is not None
+        
+        if use_alltalk:
+            try:
+                alltalk_url = alltalk_config.get("url", "http://127.0.0.1:7851")
+                self.logger.info(f"Initializing AllTalk TTS service with URL: {alltalk_url}")
+                # Ensure the URL format is correct
+                if not alltalk_url.startswith("http"):
+                    alltalk_url = f"http://{alltalk_url}"
+                
+                self.tts_service = AllTalkTTSService(
+                    alltalk_url,
+                    alltalk_config.get("voice", "v2/en_male_1")
+                )
+                
+                # Try reloading the AllTalk config to ensure proper connectivity
+                from services.audio.reload_alltalk import reload_alltalk_config
+                reload_result = reload_alltalk_config(alltalk_url)
+                if reload_result["success"]:
+                    self.logger.info(f"AllTalk service check successful: {reload_result['voice_count']} voices available")
+                else:
+                    self.logger.warning(f"AllTalk service check reported issues: {reload_result['message']}")
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize AllTalk TTS: {e}. Falling back to gTTS.")
+                self.tts_service = TTSService(self.config["audio"]["tts_model"])
+        else:
+            self.tts_service = TTSService(self.config["audio"]["tts_model"])
+            
+        # Initialize LLM client with improved configuration
+        ollama_config = self.config["ollama"]
+        self.llm_client = OllamaClient(
+            ollama_config["url"],
+            ollama_config["model"],
+            ollama_config.get("context_length", 4096)
+        )
+        
+        # Initialize WebSocket server with references to all components
         self.websocket_server = WebSocketServer(
             self.config["server"]["host"],
             self.config["server"]["port"],
@@ -60,10 +121,25 @@ class Server:
             self.heartbeat_service
         )
         
-        # Setup signal handlers
+        # Setup signal handlers for graceful shutdown
         self._setup_signal_handlers()
         
-        self.logger.info("Server initialized")
+        self.logger.info("Enhanced server initialized")
+
+    def _load_config(self, config_path):
+        """Load configuration from file with fallback to default"""
+        try:
+            with open(config_path, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            self.logger.error(f"Error loading config from {config_path}: {e}")
+            self.logger.info("Falling back to default config.json")
+            try:
+                with open("config.json", 'r') as f:
+                    return json.load(f)
+            except Exception as e2:
+                self.logger.critical(f"Error loading fallback config: {e2}")
+                sys.exit(1)
 
     def _setup_directories(self):
         """Create necessary directories for data storage"""
@@ -111,13 +187,19 @@ class Server:
             self._handle_websocket_error
         )
         
+        # Register system error handler
+        self.error_handler.register_recovery_handler(
+            ErrorHandler.SYSTEM_ERROR,
+            self._handle_system_error
+        )
+    
     async def _handle_llm_error(self, session_id, exception, context):
-        """Handle errors in LLM processing"""
+        """Handle errors in LLM processing with improved recovery"""
         try:
             # Log the detailed error
             self.logger.error(f"LLM error recovery for {session_id}: {exception}")
             
-            # Transition to WAITING state to prepare for next input
+            # Always transition to WAITING state to prevent client hang
             await self.state_manager.transition_state(session_id, "WAITING", {
                 "message": "Ready for next question",
                 "error": "Interview system needed to reset"
@@ -127,27 +209,63 @@ class Server:
             if "websocket" in context:
                 websocket = context["websocket"]
                 fallback_message = {
-                    "type": "system_message",
-                    "message": "I had a bit of trouble with that response. Let's continue with the interview."
+                    "type": "text_response",  # Use text_response type for better client handling
+                    "text": "I had a bit of trouble processing that. Let's continue the interview. Could you please ask me another question?",
+                    "message": "LLM processing error, showing text response instead"
                 }
                 await websocket.send(json.dumps(fallback_message))
                 
+            # Mark that this session had an error to avoid repeated failures
+            session = self.state_manager.get_session(session_id)
+            if session:
+                if not hasattr(session, 'error_count'):
+                    session.error_count = 0
+                session.error_count += 1
+                
+                # If multiple errors occur, suggest refreshing the client
+                if session.error_count >= 3:
+                    if "websocket" in context:
+                        websocket = context["websocket"]
+                        reset_message = {
+                            "type": "system_message",
+                            "message": "Multiple errors detected. Consider refreshing your client application."
+                        }
+                        await websocket.send(json.dumps(reset_message))
+                
+            return True  # Indicate successful recovery
         except Exception as e:
             self.logger.error(f"Error during LLM error recovery: {e}")
+            return False
             
     async def _handle_stt_error(self, session_id, exception, context):
-        """Handle errors in speech-to-text processing"""
+        """Handle errors in speech-to-text processing with improved recovery"""
         try:
-            # Transition to WAITING state
+            # Always transition to WAITING state for next input
             await self.state_manager.transition_state(session_id, "WAITING", {
                 "message": "Speech recognition error, please try again"
             })
             
+            # Send error notification if possible
+            if "websocket" in context:
+                websocket = context["websocket"]
+                message = {
+                    "type": "system_message",
+                    "message": "I couldn't understand that clearly. Could you please try again?"
+                }
+                await websocket.send(json.dumps(message))
+                
+            return True  # Indicate successful recovery
         except Exception as e:
             self.logger.error(f"Error during STT error recovery: {e}")
+            # Final fallback - always try to get back to WAITING state
+            try:
+                await self.state_manager.transition_state(session_id, "WAITING", {})
+            except:
+                pass
+            return False
             
     async def _handle_tts_error(self, session_id, exception, context):
-        """Handle errors in text-to-speech processing"""
+        """Handle errors in text-to-speech processing with improved recovery"""
         try:
             # If we have the text response, send it directly as a fallback
             text_response = context.get("text_response")
@@ -165,21 +283,86 @@ class Server:
                 "message": "Ready for next question"
             })
             
+            return True  # Indicate successful recovery
         except Exception as e:
             self.logger.error(f"Error during TTS error recovery: {e}")
+            # Final fallback - always try to get back to WAITING state
+            try:
+                await self.state_manager.transition_state(session_id, "WAITING", {})
+            except:
+                pass
+            return False
             
     async def _handle_websocket_error(self, session_id, exception, context):
-        """Handle WebSocket connection errors"""
+        """Handle WebSocket connection errors with improved cleanup"""
         try:
             self.logger.warning(f"WebSocket error for {session_id}. Scheduling cleanup.")
-            # Schedule session cleanup after a delay
+            
+            # Try to send a final error message if websocket is still valid
+            if "websocket" in context:
+                try:
+                    websocket = context["websocket"]
+                    message = {
+                        "type": "error",
+                        "code": 1001,
+                        "message": "Connection interrupted. Please reconnect.",
+                        "session_id": session_id,
+                        "timestamp": time.time()
+                    }
+                    await websocket.send(json.dumps(message))
+                except:
+                    # Ignore errors in sending the message
+                    pass
+            
+            # Schedule session cleanup after a delay - reduce from 30s to 10s
             asyncio.get_event_loop().call_later(
-                30, 
+                10, 
                 lambda: asyncio.create_task(self.state_manager.end_session(session_id))
             )
             
+            return True  # Indicate successful recovery
         except Exception as e:
             self.logger.error(f"Error during WebSocket error recovery: {e}")
+            return False
+            
+    async def _handle_system_error(self, session_id, exception, context):
+        """Handle general system errors with improved recovery"""
+        try:
+            self.logger.error(f"System error in session {session_id}: {exception}")
+            
+            # Try to send error notification
+            if "websocket" in context:
+                websocket = context["websocket"]
+                try:
+                    message = {
+                        "type": "system_message",
+                        "message": "The system encountered an error. Please try again."
+                    }
+                    await websocket.send(json.dumps(message))
+                except:
+                    # Ignore errors in sending the message
+                    pass
+                    
+            # Always try to transition back to WAITING state after system errors
+            # This is crucial to prevent client hangs
+            try:
+                await self.state_manager.transition_state(session_id, "WAITING", {
+                    "message": "Ready for next question after system error"
+                })
+            except Exception as state_error:
+                self.logger.error(f"Failed to transition to WAITING after system error: {state_error}")
+                # As a last resort, try IDLE
+                try:
+                    await self.state_manager.transition_state(session_id, "IDLE", {
+                        "message": "System reset after error"
+                    })
+                except:
+                    pass
+            
+            return True  # Indicate successful recovery
+        except Exception as e:
+            self.logger.error(f"Error during system error recovery: {e}")
+            return False
             
     def _signal_handler(self, sig, frame):
         """Handle termination signals"""
@@ -191,14 +374,19 @@ class Server:
     async def _shutdown(self):
         """Gracefully shutdown the server - used by internal logic, not signals"""
         self.logger.info("Shutting down...")
-        # Stop heartbeat service
-        await self.heartbeat_service.stop_all()
+        
+        # Stop heartbeat service if enabled
+        if self.heartbeat_service:
+            await self.heartbeat_service.stop_all()
+            
         # Close WebSocket server
         await self.websocket_server.shutdown()
+        
         # Cleanup other resources
         tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
         [task.cancel() for task in tasks]
         await asyncio.gather(*tasks, return_exceptions=True)
+        
         asyncio.get_event_loop().stop()
         self.logger.info("Shutdown complete")
 
@@ -213,8 +401,8 @@ class Server:
 
 
 if __name__ == "__main__":
-    # Create and run the server
-    server = Server()
+    # Create and run the enhanced server
+    server = EnhancedServer()
     
     # Different approach based on platform
     if sys.platform == 'win32':
