@@ -7,13 +7,14 @@ import sys
 import os
 from pathlib import Path
 
-from app.websocket.server import WebSocketServer
+from app.websocket.server import WebSocketServer, HeartbeatService
 from app.state.manager import StateManager
 from services.audio.stt import STTService
 from services.audio.tts import TTSService
 from services.llm.ollama_client import OllamaClient
 from app.utils.logging import setup_logging
 from app.utils.config import load_config
+from app.error_handler import ErrorHandler
 
 
 class Server:
@@ -38,6 +39,15 @@ class Server:
             self.config["ollama"]["context_length"]
         )
         
+        # Initialize support services
+        self.error_handler = ErrorHandler()
+        self.heartbeat_service = HeartbeatService(
+            heartbeat_interval=self.config.get("heartbeat_interval", 5.0)
+        )
+        
+        # Register error recovery handlers
+        self._register_error_handlers()
+        
         # Initialize WebSocket server with references to other components
         self.websocket_server = WebSocketServer(
             self.config["server"]["host"],
@@ -45,7 +55,9 @@ class Server:
             self.state_manager,
             self.stt_service,
             self.tts_service,
-            self.llm_client
+            self.llm_client,
+            self.error_handler,
+            self.heartbeat_service
         )
         
         # Setup signal handlers
@@ -73,6 +85,102 @@ class Server:
         except Exception as e:
             self.logger.warning(f"Could not set up signal handlers: {e}")
             
+    def _register_error_handlers(self):
+        """Register handlers for different error types"""
+        # Register LLM error handler
+        self.error_handler.register_recovery_handler(
+            ErrorHandler.LLM_ERROR,
+            self._handle_llm_error
+        )
+        
+        # Register STT error handler
+        self.error_handler.register_recovery_handler(
+            ErrorHandler.STT_ERROR,
+            self._handle_stt_error
+        )
+        
+        # Register TTS error handler
+        self.error_handler.register_recovery_handler(
+            ErrorHandler.TTS_ERROR,
+            self._handle_tts_error
+        )
+        
+        # Register WebSocket error handler
+        self.error_handler.register_recovery_handler(
+            ErrorHandler.WEBSOCKET_ERROR,
+            self._handle_websocket_error
+        )
+        
+    async def _handle_llm_error(self, session_id, exception, context):
+        """Handle errors in LLM processing"""
+        try:
+            # Log the detailed error
+            self.logger.error(f"LLM error recovery for {session_id}: {exception}")
+            
+            # Transition to WAITING state to prepare for next input
+            await self.state_manager.transition_state(session_id, "WAITING", {
+                "message": "Ready for next question",
+                "error": "Interview system needed to reset"
+            })
+            
+            # Send fallback response directly if possible
+            if "websocket" in context:
+                websocket = context["websocket"]
+                fallback_message = {
+                    "type": "system_message",
+                    "message": "I had a bit of trouble with that response. Let's continue with the interview."
+                }
+                await websocket.send(json.dumps(fallback_message))
+                
+        except Exception as e:
+            self.logger.error(f"Error during LLM error recovery: {e}")
+            
+    async def _handle_stt_error(self, session_id, exception, context):
+        """Handle errors in speech-to-text processing"""
+        try:
+            # Transition to WAITING state
+            await self.state_manager.transition_state(session_id, "WAITING", {
+                "message": "Speech recognition error, please try again"
+            })
+            
+        except Exception as e:
+            self.logger.error(f"Error during STT error recovery: {e}")
+            
+    async def _handle_tts_error(self, session_id, exception, context):
+        """Handle errors in text-to-speech processing"""
+        try:
+            # If we have the text response, send it directly as a fallback
+            text_response = context.get("text_response")
+            if text_response and "websocket" in context:
+                websocket = context["websocket"]
+                fallback_message = {
+                    "type": "text_response",
+                    "text": text_response,
+                    "message": "Audio couldn't be generated. Displaying text instead."
+                }
+                await websocket.send(json.dumps(fallback_message))
+                
+            # Transition to WAITING state
+            await self.state_manager.transition_state(session_id, "WAITING", {
+                "message": "Ready for next question"
+            })
+            
+        except Exception as e:
+            self.logger.error(f"Error during TTS error recovery: {e}")
+            
+    async def _handle_websocket_error(self, session_id, exception, context):
+        """Handle WebSocket connection errors"""
+        try:
+            self.logger.warning(f"WebSocket error for {session_id}. Scheduling cleanup.")
+            # Schedule session cleanup after a delay
+            asyncio.get_event_loop().call_later(
+                30, 
+                lambda: asyncio.create_task(self.state_manager.end_session(session_id))
+            )
+            
+        except Exception as e:
+            self.logger.error(f"Error during WebSocket error recovery: {e}")
+            
     def _signal_handler(self, sig, frame):
         """Handle termination signals"""
         self.logger.info(f"Received signal {sig}, initiating shutdown...")
@@ -83,6 +191,8 @@ class Server:
     async def _shutdown(self):
         """Gracefully shutdown the server - used by internal logic, not signals"""
         self.logger.info("Shutting down...")
+        # Stop heartbeat service
+        await self.heartbeat_service.stop_all()
         # Close WebSocket server
         await self.websocket_server.shutdown()
         # Cleanup other resources
