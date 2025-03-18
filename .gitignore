@@ -1,0 +1,23 @@
+# Python virtual environment
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.so
+
+# Logs and generated data
+logs/
+*.log
+data/audio/
+audio_out/
+
+# Environment-specific files
+.env
+
+# IDE files
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
