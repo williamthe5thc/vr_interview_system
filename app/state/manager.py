@@ -55,6 +55,58 @@ class StateManager:
             
         if session_id in self._state_locks:
             del self._state_locks[session_id]
+            
+    async def force_transition(self, session_id, new_state, metadata=None):
+        """
+        Force a state transition without waiting for locks.
+        For emergency recovery only.
+        
+        Args:
+            session_id: The session to update
+            new_state: The new state to transition to
+            metadata: Optional metadata for the state update
+            
+        Returns:
+            True if the transition was successful, False otherwise
+        """
+        if session_id not in self.sessions:
+            self.logger.error(f"Cannot force transition for unknown session: {session_id}")
+            return False
+            
+        try:
+            session = self.sessions[session_id]
+            previous_state = session.state
+            
+            # Force the state change directly
+            session.state = new_state
+            session.last_updated = time.time()
+            
+            # Update metadata if provided
+            if metadata:
+                session.metadata.update(metadata)
+            else:
+                metadata = {}
+                
+            # Add forced flag to metadata
+            metadata["forced"] = True
+            metadata["recovery"] = True
+            metadata["message"] = metadata.get("message", "Forced state transition for recovery")
+            
+            self.logger.warning(
+                f"Forced state transition: {session_id}: {previous_state} to {new_state}"
+            )
+            
+            # Try to broadcast the change
+            try:
+                await self._broadcast_state_change(session_id, previous_state, new_state, metadata)
+            except Exception as e:
+                self.logger.error(f"Error broadcasting forced state change: {e}")
+                # Even if broadcast fails, we still made the change
+                
+            return True
+        except Exception as e:
+            self.logger.error(f"Error during forced state transition: {e}")
+            return False
         
     def get_session(self, session_id):
         """Get the session object for a session ID"""
@@ -67,7 +119,7 @@ class StateManager:
             return None
         return session.state
         
-    async def transition_state(self, session_id, new_state, metadata=None, timeout=3.0):
+    async def transition_state(self, session_id, new_state, metadata=None, timeout=2.0):
         """
         Transition session to a new state and broadcast the change.
         
@@ -77,13 +129,14 @@ class StateManager:
             session_id: The session to update
             new_state: The new state to transition to
             metadata: Optional metadata for the state update
-            timeout: Maximum time to wait for lock acquisition (reduced from 5.0 to 3.0)
+            timeout: Maximum time to wait for lock acquisition (reduced from 3.0 to 2.0)
         
         Returns:
             True if the transition was successful, False otherwise
         """
         if session_id not in self.sessions:
-            self.logger.error(f"Cannot transition state for unknown session: {session_id}")
+            # More helpful log message with the session ID to make it easier to debug
+            self.logger.error(f"Cannot transition state for unknown session: {session_id} (to state {new_state})")
             return False
         
         # Set up a task to handle deadlock timeout if needed
@@ -122,27 +175,46 @@ class StateManager:
                     
                 previous_state = session.state
                 
-                # Check for redundant updates (same state with no meaningful metadata change)
-                if previous_state == new_state and metadata and "progress" not in metadata:
-                    # For progress updates, we still want to show them
-                    # But avoid redundant state broadcasts that have no meaningful changes
-                    redundant = True
-                    
-                    # Check if there's any meaningful difference in metadata
-                    if metadata and session.metadata:
-                        for key, value in metadata.items():
-                            if key not in session.metadata or session.metadata[key] != value:
-                                redundant = False
-                                break
-                    
-                    if redundant:
-                        self.logger.debug(f"Skipping redundant state update for {session_id}: {new_state}")
-                        return True
+                # More aggressive redundant update detection for PROCESSING state
+                if previous_state == new_state:
+                    # For PROCESSING state, limit updates to be less frequent
+                    if new_state == "PROCESSING":
+                        # Store timestamps for PROCESSING state updates
+                        last_update_time = getattr(session, "last_processing_update", 0)
+                        current_time = time.time()
+                        
+                        # Only allow updates every 3 seconds unless they contain progress info
+                        if (current_time - last_update_time < 3.0 and 
+                            (not metadata or "progress" not in metadata)):
+                            self.logger.debug(
+                                f"Limiting PROCESSING state updates for {session_id}, "
+                                f"last update was {current_time - last_update_time:.1f}s ago"
+                            )
+                            return True
+                        
+                        # Update the last processing update time
+                        setattr(session, "last_processing_update", current_time)
+                    # For other states, check if metadata has meaningful changes
+                    elif metadata and "progress" not in metadata:
+                        # For progress updates, we still want to show them
+                        # But avoid redundant state broadcasts that have no meaningful changes
+                        redundant = True
+                        
+                        # Check if there's any meaningful difference in metadata
+                        if metadata and session.metadata:
+                            for key, value in metadata.items():
+                                if key not in session.metadata or session.metadata[key] != value:
+                                    redundant = False
+                                    break
+                        
+                        if redundant:
+                            self.logger.debug(f"Skipping redundant state update for {session_id}: {new_state}")
+                            return True
                 
                 # Validate the state transition
                 if not self._is_valid_transition(previous_state, new_state):
                     self.logger.warning(
-                        f"Invalid state transition: {previous_state} → {new_state}"
+                        f"Invalid state transition: {previous_state} to {new_state}"
                     )
                     # Allow the transition in production to prevent deadlocks
                     # Just log the warning
@@ -182,6 +254,7 @@ class StateManager:
         Modified with more flexible transitions to prevent deadlocks:
         - Any state can transition to WAITING (helps recover from errors)
         - PROCESSING can go to any state (helps with LLM timeout recovery)
+        - WAITING can go to RESPONDING for playback of prebuffered audio
         """
         # Allow these universal transitions
         if next_state in ["IDLE", "ERROR", "WAITING"]:
@@ -189,12 +262,12 @@ class StateManager:
             
         # Handle the normal flow with some additions
         valid_transitions = {
-            "IDLE": ["LISTENING", "WAITING", "PROCESSING"],
-            "LISTENING": ["PROCESSING", "WAITING", "IDLE"],
+            "IDLE": ["LISTENING", "WAITING", "PROCESSING", "RESPONDING"],
+            "LISTENING": ["PROCESSING", "WAITING", "IDLE", "RESPONDING"],
             "PROCESSING": ["RESPONDING", "PROCESSING", "WAITING", "IDLE", "LISTENING", "ERROR"],
             "RESPONDING": ["WAITING", "IDLE", "ERROR"],
-            "WAITING": ["LISTENING", "IDLE", "PROCESSING"],
-            "ERROR": ["IDLE", "WAITING", "PROCESSING", "LISTENING"]
+            "WAITING": ["LISTENING", "IDLE", "PROCESSING", "RESPONDING"],
+            "ERROR": ["IDLE", "WAITING", "PROCESSING", "LISTENING", "RESPONDING"]
         }
         
         return next_state in valid_transitions.get(current, [])

@@ -4,7 +4,7 @@ import logging
 from typing import Dict, Any
 
 
-def load_config(config_path: str = "config.json") -> Dict[str, Any]:
+def load_config(config_path: str = "config/config.json") -> Dict[str, Any]:
     """
     Load configuration from config.json and apply environment overrides
     

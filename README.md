@@ -1,85 +1,154 @@
 # VR Interview System
 
-A WebSocket-based server system for VR interview practice with an intelligent virtual interviewer powered by local LLM technology.
+A virtual reality job interview practice system with a conversational AI interviewer powered by local language models.
 
-## Quick Start Guide
+## Overview
 
-1. **Install dependencies**:
+The VR Interview System provides a realistic job interview practice environment in virtual reality, featuring an AI-powered interviewer that responds to your speech in natural language. The system uses local language models (via Ollama) for conversation generation and can stream audio responses for a seamless experience.
+
+## System Architecture
+
+The system consists of three main components:
+
+1. **VR Client (Oculus Quest)**: Handles the VR environment, avatar animation, and user interaction
+2. **Python Server**: Manages WebSocket communication, audio processing, state management, and LLM integration
+3. **LLM Service (Ollama)**: Processes natural language via local models such as Phi, Mistral, or other models
+
+## Key Features
+
+- **Real-time Conversation**: Speak naturally to the AI interviewer and receive contextually appropriate responses
+- **Audio Streaming**: Fast response time with AllTalk TTS streaming capability
+- **Local Processing**: All processing happens locally without requiring cloud services
+- **Realistic Avatar**: Professional interviewer avatar with synchronized speech and expressions
+- **Robust Error Handling**: Graceful fallbacks when components fail
+
+## Requirements
+
+- Oculus Quest headset
+- PC with Windows 10/11
+- Python 3.9+
+- [Ollama](https://ollama.ai/) with Mistral or similar model
+- [AllTalk TTS](https://github.com/erew123/alltalk_tts) (for high-quality voice)
+
+## Setup Instructions
+
+### Server Setup
+
+1. Clone the repository
    ```
-   install_dependencies.bat
+   git clone https://github.com/yourusername/vr-interview-system.git
+   cd vr-interview-system
    ```
 
-2. **Run the system with microphone input**:
+2. Create and activate a virtual environment
    ```
-   use_mic.bat
-   ```
-
-3. **Run with AllTalk for better voice quality**:
-   ```
-   use_alltalk_mic.bat
+   python -m venv venv
+   venv\Scripts\activate
    ```
 
-4. **Run an automated interview simulation**:
+3. Install requirements
    ```
-   use_simulation.bat
+   pip install -r requirements.txt
    ```
 
-## System Overview
+4. Install and start Ollama
+   - Download from [ollama.ai](https://ollama.ai/)
+   - Pull the Mistral model: `ollama pull mistral`
 
-The VR Interview System provides a realistic job interview practice environment, with an intelligent interviewer powered by local LLM technology. The system consists of a WebSocket server and client components, handling audio processing, conversation management, and LLM interactions.
+5. Install and configure AllTalk TTS
+   - Follow instructions at [AllTalk TTS GitHub](https://github.com/erew123/alltalk_tts)
+   - Start AllTalk server
 
-## Architecture
+6. Configure the system
+   - Modify `config/config.json` as needed
 
-The system is divided into three main components:
-1. **WebSocket Server** - Manages WebSocket communication, processes audio, and coordinates state
-2. **LLM Service (Ollama)** - Handles natural language processing via local Phi or similar model
-3. **Client Components** - Microphone input or automated simulation
+7. Start the server
+   ```
+   python server.py
+   ```
 
-## Features
+### VR Client Setup
 
-- **Real-time conversation** with an AI interviewer using your microphone
-- **Automated simulation** with pre-defined interview questions
-- **AllTalk integration** for high-quality speech synthesis
-- **Fallback to gTTS** when AllTalk is not available
-- **State machine** tracking conversation flow
+1. Open the Unity project in Unity 2022.3.7f1 or later
+2. Set the server URL in the ConnectionManager component settings
+3. Build for Oculus Quest
+4. Install on your Quest headset
 
-## Batch Files
+## Configuration
 
-The system includes several batch files for easy usage:
+The system can be configured through the `config/config.json` file:
 
-- **install_dependencies.bat**: Install required Python packages
-- **use_mic.bat**: Run with microphone input
-- **use_alltalk_mic.bat**: Run with AllTalk and microphone input
-- **use_simulation.bat**: Run automated interview simulation
-- **use_alltalk.bat**: Run the server with AllTalk integration
+```json
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8765,
+    "log_level": "INFO"
+  },
+  "audio": {
+    "stt_model": "medium",
+    "tts_model": "en"
+  },
+  "ollama": {
+    "url": "http://localhost:11434",
+    "model": "mistral:latest"
+  },
+  "alltalk": {
+    "url": "http://127.0.0.1:7851",
+    "voice": "YourPreferredVoice.wav",
+    "alltalk_dir": "D:/AllTalk/alltalk_tts"
+  }
+}
+```
+
+## AllTalk Streaming Integration
+
+The system includes optimized integration with AllTalk TTS for streaming audio responses:
+
+- Direct streaming from AllTalk to the VR client
+- Parallel audio synthesis for fast fallback
+- Multiple file location checking for reliable retrieval
+- Automatic adaptation to AllTalk's file extensions
+- Progressive timeouts to handle AllTalk's generation times
 
 ## Troubleshooting
 
-### Common Issues:
+### Audio Streaming Issues
 
-1. **Missing dependencies**:
-   - Run `install_dependencies.bat` to install required packages
+If you experience issues with AllTalk streaming:
 
-2. **Port already in use**:
-   - Run `kill_server.py` to kill any existing servers
-   - Or restart your computer to free up all ports
+1. Check the server logs for streaming confirmation messages
+2. Verify AllTalk is running and the URL is correct in config.json
+3. Check permissions on the AllTalk outputs directory
+4. Increase streaming timeout in config if needed
+5. Check the Unity client logs for streaming status updates
 
-3. **AllTalk connection issues**:
-   - Make sure AllTalk is running at http://127.0.0.1:7851
-   - Check the AllTalk console for errors
+### Connection Issues
 
-4. **Audio issues**:
-   - Check if your microphone is working
-   - Adjust the silence threshold in mic_client.py if needed
+1. Verify the server IP address is accessible from the Quest
+2. Check firewall settings to ensure port 8765 is open
+3. Restart both server and client
 
-## Advanced Usage
+### LLM Integration Issues
 
-See the extended README (README_EXTENDED.md) for more detailed information on:
-- Advanced configuration options
-- Customizing voices
-- API details
-- Development guidelines
+1. Verify Ollama is running (`ollama serve`)
+2. Check if the model is downloaded (`ollama list`)
+3. Try a different model in config.json
+
+## Development
+
+The system uses an asynchronous architecture to prevent blocking during LLM and audio processing:
+
+- WebSocket communication runs on the main asyncio event loop
+- CPU-intensive tasks (STT, LLM, TTS) run in separate thread pools
+- State transitions are synchronized across components
 
 ## License
 
-MIT License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- [Ollama](https://ollama.ai/) for local LLM hosting
+- [AllTalk TTS](https://github.com/erew123/alltalk_tts) for high-quality TTS
+- [Whisper](https://github.com/openai/whisper) for speech recognition

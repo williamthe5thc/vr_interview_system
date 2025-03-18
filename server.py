@@ -6,6 +6,26 @@ This version includes improved error handling, heartbeat mechanism,
 and optimized async architecture to prevent blocking during LLM processing.
 """
 
+# Configure logging first thing
+import logging
+import os
+import sys
+import traceback
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("server_diagnostic.log"),
+    ]
+)
+
+logger = logging.getLogger("server")
+logger.info("==== VR INTERVIEW SERVER STARTING ====")
+logger.info(f"Python version: {sys.version}")
+logger.info(f"Current working directory: {os.getcwd()}")
+logger.info(f"Server script location: {os.path.abspath(__file__)}")
+
 import asyncio
 import json
 import logging
@@ -16,11 +36,11 @@ import time
 from pathlib import Path
 
 # Import core components
-from app.websocket.server_enhanced import WebSocketServer
+from app.websocket.server_enhanced_fixed import WebSocketServer
 from app.state.manager import StateManager
-from services.audio.stt import STTService
+from services.audio.stt_wrapper import STTService  # Fixed import
 from services.audio.tts import TTSService
-from services.audio.alltalk_tts import AllTalkTTSService
+from services.audio.alltalk_tts_improved import AllTalkTTSService
 from services.llm.ollama_client import OllamaClient
 from app.utils.logging import setup_logging
 from app.utils.config import load_config
@@ -36,7 +56,7 @@ class EnhancedServer:
     blocking during LLM operations and provides better error recovery.
     """
     
-    def __init__(self, config_path="config_enhanced.json"):
+    def __init__(self, config_path="config/config.json"):
         # Load configuration
         self.config = self._load_config(config_path)
         
@@ -71,42 +91,36 @@ class EnhancedServer:
         self.state_manager = StateManager()
         self.stt_service = STTService(self.config["audio"]["stt_model"])
         
-        # Choose TTS service based on configuration
-        alltalk_config = self.config.get("alltalk", {})
-        use_alltalk = alltalk_config.get("url") is not None
-        
-        if use_alltalk:
-            try:
-                alltalk_url = alltalk_config.get("url", "http://127.0.0.1:7851")
-                self.logger.info(f"Initializing AllTalk TTS service with URL: {alltalk_url}")
-                # Ensure the URL format is correct
-                if not alltalk_url.startswith("http"):
-                    alltalk_url = f"http://{alltalk_url}"
-                
-                self.tts_service = AllTalkTTSService(
-                    alltalk_url,
-                    alltalk_config.get("voice", "v2/en_male_1")
-                )
-                
-                # Try reloading the AllTalk config to ensure proper connectivity
-                from services.audio.reload_alltalk import reload_alltalk_config
-                reload_result = reload_alltalk_config(alltalk_url)
-                if reload_result["success"]:
-                    self.logger.info(f"AllTalk service check successful: {reload_result['voice_count']} voices available")
-                else:
-                    self.logger.warning(f"AllTalk service check reported issues: {reload_result['message']}")
-            except Exception as e:
-                self.logger.warning(f"Failed to initialize AllTalk TTS: {e}. Falling back to gTTS.")
-                self.tts_service = TTSService(self.config["audio"]["tts_model"])
-        else:
-            self.tts_service = TTSService(self.config["audio"]["tts_model"])
+        # Try to use AllTalk Direct first, fall back to gTTS if needed
+        try:
+            # First try to initialize AllTalk Direct
+            from services.audio.alltalk_tts_direct import AllTalkTTSDirectService
+            self.logger.info("Attempting to use AllTalk Direct for TTS")
+            self.tts_service = AllTalkTTSDirectService(
+                url=self.config["alltalk"]["url"],
+                voice=self.config["alltalk"]["voice"],
+                config=self.config["alltalk"]
+            )
+            
+            # Test if AllTalk is actually available
+            if self.tts_service.is_available():
+                self.logger.info("Successfully connected to AllTalk TTS service using direct API")
+            else:
+                self.logger.warning("AllTalk not available, falling back to gTTS")
+                from services.audio.gtts_only_service import GTTSOnlyService
+                self.tts_service = GTTSOnlyService(language='en')
+        except Exception as e:
+            self.logger.warning(f"Error initializing AllTalk Direct: {e}, falling back to gTTS")
+            from services.audio.gtts_only_service import GTTSOnlyService
+            self.tts_service = GTTSOnlyService(language='en')
             
         # Initialize LLM client with improved configuration
         ollama_config = self.config["ollama"]
         self.llm_client = OllamaClient(
             ollama_config["url"],
             ollama_config["model"],
-            ollama_config.get("context_length", 4096)
+            ollama_config.get("context_length", 4096),
+            config=ollama_config  # Pass complete config
         )
         
         # Initialize WebSocket server with references to all components
@@ -133,9 +147,9 @@ class EnhancedServer:
                 return json.load(f)
         except Exception as e:
             self.logger.error(f"Error loading config from {config_path}: {e}")
-            self.logger.info("Falling back to default config.json")
+            self.logger.info("Falling back to default config/config.json")
             try:
-                with open("config.json", 'r') as f:
+                with open("config/config.json", 'r') as f:
                     return json.load(f)
             except Exception as e2:
                 self.logger.critical(f"Error loading fallback config: {e2}")
@@ -391,7 +405,23 @@ class EnhancedServer:
         self.logger.info("Shutdown complete")
 
     async def start(self):
-        """Start the server and all its components"""
+        """Start the server and all components with proper initialization"""
+        # Preload the STT model before accepting connections
+        self.logger.info("Preloading STT model (this may take a moment)...")
+        try:
+            # Run in thread pool to avoid blocking startup
+            # Access the actual STT implementation through the wrapper
+            start_time = time.time()
+            # Use the original_stt instance which has the _load_model method
+            if hasattr(self.stt_service, 'original_stt') and hasattr(self.stt_service.original_stt, '_load_model'):
+                await asyncio.to_thread(self.stt_service.original_stt._load_model)
+                load_time = time.time() - start_time
+                self.logger.info(f"STT model preloaded successfully in {load_time:.2f} seconds")
+        except Exception as e:
+            self.logger.error(f"Error preloading STT model: {e}")
+            self.logger.warning("Will use lazy loading instead, expect delay on first transcription")
+            
+        # Now start the server
         self.logger.info(f"Starting server on {self.config['server']['host']}:{self.config['server']['port']}")
         try:
             await self.websocket_server.start()
