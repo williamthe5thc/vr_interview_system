@@ -1,0 +1,57 @@
+{
+  "__comment": "VR Interview System Configuration",
+  
+  "server": {
+    "__comment": "WebSocket server settings",
+    "host": "0.0.0.0",
+    "port": 8765,
+    "log_level": "INFO"
+  },
+  
+  "audio": {
+    "__comment": "Audio processing settings - options for stt_model: 'tiny', 'base', 'small', 'medium', 'large'",
+    "stt_model": "medium",
+    "tts_model": "en",
+    "sample_rate": 16000,
+    "channels": 1
+  },
+  
+  "storage": {
+    "__comment": "Data storage settings",
+    "audio_dir": "data/audio",
+    "conversation_dir": "data/conversations",
+    "retention_days": 30
+  },
+  
+  "alltalk": {
+    "__comment": "AllTalk TTS integration settings (optional - remove section to use standard TTS)",
+    "url": "http://127.0.0.1:7851",
+    "voice": "Clint_Eastwood CC3 (enhanced).wav",
+    "direct_mode": true,
+    "retries": 3,
+    "timeout": 20
+  },
+  
+  "ollama": {
+    "__comment": "Ollama LLM settings",
+    "url": "http://localhost:11434",
+    "model": "phi",
+    "context_length": 8192,
+    "system_prompt": "You are a job interviewer conducting an interview with the candidate. Your questions should be relevant to a software engineering position. Keep your responses concise and professional. Ask follow-up questions based on the candidate's answers. Avoid mentioning that you are an AI or breaking character.",
+    "options": {
+      "__comment": "Model generation parameters",
+      "temperature": 0.7,
+      "top_p": 0.85,
+      "top_k": 30,
+      "repeat_penalty": 1.2,
+      "num_predict": 120,
+      "seed": 42
+    }
+  },
+  
+  "heartbeat": {
+    "__comment": "Connection health monitoring",
+    "enabled": true,
+    "interval": 5.0
+  }
+}
