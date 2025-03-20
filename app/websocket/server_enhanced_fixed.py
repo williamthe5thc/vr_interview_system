@@ -655,15 +655,28 @@ class WebSocketServer:
                 )
             
             # Generate speech from text with timeout
+            tts_future = None
             try:
                 tts_future = asyncio.create_task(
                     asyncio.to_thread(self.tts_service.synthesize, response)
                 )
                 
-                # Add a timeout for TTS processing
-                audio_response = await asyncio.wait_for(tts_future, timeout=10.0)
+                # Add a timeout for TTS processing but let the task continue
+                audio_response = await asyncio.wait_for(tts_future, timeout=15.0)  # Increased timeout
             except asyncio.TimeoutError:
                 self.logger.warning(f"TTS timeout for session {session_id}")
+                
+                # Don't cancel the TTS future - let it continue in the background
+                # Instead, keep a reference to it for later retrieval
+                if session_id in self.state_manager.sessions:
+                    session = self.state_manager.sessions[session_id]
+                    if not hasattr(session, 'pending_tts_tasks'):
+                        session.pending_tts_tasks = []
+                    # Store task for potential completion later
+                    if tts_future and not tts_future.done():
+                        self.logger.info(f"Storing pending TTS task for session {session_id}")
+                        session.pending_tts_tasks.append(tts_future)
+                
                 if self.error_handler:
                     await self.error_handler.handle_error(
                         ErrorHandler.TTS_ERROR,
@@ -672,12 +685,12 @@ class WebSocketServer:
                         {"websocket": websocket, "text_response": response}
                     )
                 
-                # Cancel all background tasks
+                # Cancel only heartbeat task but keep safety timer
                 if heartbeat_task and not heartbeat_task.done():
                     heartbeat_task.cancel()
-                if safety_timer and not safety_timer.done():
-                    safety_timer.cancel()
-                return
+                    
+                # Don't return yet - let the server transition to WAITING state normally
+                audio_response = None
             except Exception as tts_error:
                 if self.error_handler:
                     # Handle TTS errors with error handler

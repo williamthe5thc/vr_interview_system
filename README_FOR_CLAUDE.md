@@ -1,12 +1,65 @@
-# VR Interview System - Technical Guide for Claude (Server)
+# VR Interview System - Technical Guide
 
-## Project Overview
+## Overview
 
 The VR Interview System is a virtual reality interview practice platform that allows users to engage in realistic job interview scenarios within a VR environment. The system consists of a Python-based server running on a PC that connects with an Oculus Quest VR client built in Unity. The server handles natural language processing, audio conversion, and conversation management, while the VR client handles audio capture, playback, and avatar animation.
 
-## Recent Updates
+The system uses a state machine architecture to manage conversation flow, WebSocket communication for real-time interaction, local LLM integration via Ollama, and high-quality text-to-speech via AllTalk with multiple fallback mechanisms for robust operation.
 
-### System Improvements (March 2025)
+## Project Location
+
+- **Python Server Root**: `D:\vr_interview_system\`
+- **Unity Client Root**: `D:\VRSystemTest\`
+- **AllTalk TTS Root**: `D:/AllTalk/alltalk_tts`
+- **Documentation**: `D:\vr_interview_system\docs\`
+
+## Documentation
+
+Comprehensive documentation is available in the `docs` directory, organized by system component:
+
+1. **System Overview**: `docs/system_overview.md` - High-level architecture, component interactions, and system startup/shutdown
+2. **WebSocket Documentation**: `docs/websocket_documentation.md` - Connection handling, message protocol, client capabilities
+3. **State Management**: `docs/state_management_documentation.md` - State machine, transitions, session tracking, deadlock prevention
+4. **Audio Processing**: `docs/audio_processing_documentation.md` - STT/TTS integration, streaming, fallback mechanisms
+5. **LLM Integration**: `docs/llm_integration_documentation.md` - Ollama client, prompt engineering, response caching, context management
+6. **Error Handling**: `docs/error_handling_documentation.md` - Recovery strategies, graceful degradation, error tracking
+7. **Heartbeat System**: `docs/heartbeat_system_documentation.md` - Connection keepalive, progress updates, timing configuration
+8. **Enhanced Stream Processor**: `docs/enhanced_stream_processor_documentation.md` - Optimized audio processing pipeline
+9. **Configuration Management**: `docs/configuration_management_documentation.md` - Config structure, environment overrides, validation
+10. **Function Reference**: `docs/function_reference.md` - Alphabetical reference of key functions across all components
+
+## Implementation Details
+
+### Core Functionality
+
+1. **Asynchronous Architecture**
+   - Based on Python's asyncio for non-blocking operation
+   - Thread pool for CPU-intensive operations (STT, LLM, TTS)
+   - Task tracking system for proper resource management
+
+2. **State Machine**
+   - Manages conversation flow through defined states (IDLE, LISTENING, PROCESSING, RESPONDING, WAITING)
+   - Validates state transitions with deadlock prevention
+   - Provides recovery paths for error conditions
+
+3. **Speech Processing**
+   - STT using OpenAI Whisper models with fallback options
+   - TTS using AllTalk direct API with multiple endpoint attempts
+   - Format validation and conversion for audio interchange
+
+4. **LLM Integration**
+   - Connects to local Ollama instance running Mistral model
+   - Optimized prompt formatting with context window management
+   - Response caching for performance optimization
+   - Timeout handling with retry strategies
+
+5. **Error Handling**
+   - Specialized recovery handlers for different error types
+   - Pattern detection for recurring issues
+   - Cooldown periods and attempt limits
+   - Graceful degradation with fallback options
+
+### Recent Improvements
 
 1. **Enhanced LLM Response Handling**:
    - Extended LLM timeout from 12 to 45 seconds
@@ -31,75 +84,149 @@ The VR Interview System is a virtual reality interview practice platform that al
    - Added progress update messages during long processing operations
    - Created notification system for important status updates
 
-## Project Location
+## Common Problems
 
-- **Python Server Root**: `D:\vr_interview_system\`
-- **Unity Client Root**: `D:\VRSystemTest\`
-- **AllTalk TTS Root**: `D:/AllTalk/alltalk_tts`
+### WebSocket Connection Issues
 
-> **Note**: For information about the Unity client implementation, please refer to `D:\VRSystemTest\README_FOR_CLAUDE.md`, which contains details about the client-side components, UI implementation, and Unity-specific considerations.
+1. **Timeouts During Long Operations**
+   - **Symptom**: Client disconnects during long LLM processing
+   - **Cause**: Default WebSocket timeout reached
+   - **Solution**: Heartbeat mechanism sends periodic messages to keep connection alive
 
-## Implementation Details
+2. **Session ID Mismatch**
+   - **Symptom**: Conversation history lost after reconnection
+   - **Cause**: Client and server using different session IDs
+   - **Solution**: Session ID mapping system to translate between client and server IDs
 
-### Extended LLM Timeout Handling
+### Audio Processing Issues
 
-The previous implementation had a 12-second timeout which caused frequent timeouts during LLM processing. The new system has these improvements:
+1. **STT Failures**
+   - **Symptom**: No transcription despite valid audio
+   - **Cause**: Whisper model loading failure or incorrect format
+   - **Solution**: STT wrapper with fallback to SimpleSTT and error recovery
 
-1. **Extended Timeout**: Increased from 12 to 45 seconds to accommodate slower LLM responses
-2. **Progressive Updates**: System now sends "thinking" updates every 5 seconds during processing
-3. **Delayed Response Handling**: If LLM exceeds the timeout, the task continues in the background
-4. **Graceful Recovery**: When a delayed response completes, it's properly delivered to the user
+2. **TTS Timeouts**
+   - **Symptom**: Audio generation takes too long
+   - **Cause**: AllTalk service under load or network issues
+   - **Solution**: Text fallback with delayed audio delivery
 
-This approach prevents the previous pattern of frequent timeout errors while providing better feedback to users during long processing times.
+3. **AllTalk API Issues**
+   - **Symptom**: No audio despite successful text generation
+   - **Cause**: AllTalk API endpoint changes or server unavailability
+   - **Solution**: Multiple API attempts with fallback to gTTS
 
-### Improved AllTalk Integration
+### LLM Processing Issues
 
-The AllTalk integration now uses correct endpoints and includes better error handling:
+1. **Slow Responses**
+   - **Symptom**: Long wait times for LLM responses
+   - **Cause**: Large context window or complex queries
+   - **Solution**: Progressive updates during processing and optimized prompts
 
-1. **Fixed API Endpoints**: Updated to use correct paths (/tts-generate instead of /api/tts-generate)
-2. **Robust Connection Checking**: Added retry logic and better availability detection
-3. **Multiple API Approaches**: Now tries multiple API methods in sequence with fallbacks
-4. **Graceful Degradation**: Falls back to gTTS with proper error logging when needed
+2. **Context Window Overflow**
+   - **Symptom**: Unrelated or truncated responses
+   - **Cause**: Conversation history exceeding model's context window
+   - **Solution**: Context pruning strategy keeping only recent interactions
 
-### Session ID Synchronization
+### Error Recovery Issues
 
-Fixed the issue where client and server had different session IDs:
+1. **Recurring Errors**
+   - **Symptom**: Same error occurs repeatedly
+   - **Cause**: Persistent underlying issue
+   - **Solution**: Pattern detection with adaptive recovery strategies
 
-1. **Server-Generated IDs**: Client now properly accepts server-generated session IDs
-2. **ID Mapping**: Added mapping system to translate between client and server IDs
-3. **Session Context Preservation**: Ensured session context is maintained across reconnections
+2. **State Deadlocks**
+   - **Symptom**: System stuck in specific state
+   - **Cause**: Failed state transition or error during transition
+   - **Solution**: Deadlock detection with forced state transitions
 
 ## System Architecture
 
-### Core Components
+### High-Level Architecture
 
-1. **Python Server**: Manages WebSocket connections, audio processing, and conversation flow
-   - Uses asyncio for non-blocking operations
-   - Implements state machine for conversation management
-   - Integrates with local LLM (Ollama) and TTS (AllTalk) services
+```
+                               ┌─────────────────┐
+                               │   Client (VR)   │
+                               └────────┬────────┘
+                                        │
+                                        ▼
+┌───────────────────────────────────────────────────────────────────────┐
+│                        WebSocket Connection                           │
+└───────────────────────────────┬───────────────────────────────────────┘
+                                │
+                                ▼
+┌───────────────────────────────────────────────────────────────────────┐
+│                            Server Core                                │
+│                         (EnhancedServer)                              │
+└─┬─────────────┬───────────────┬────────────────┬──────────────────────┘
+  │             │               │                │
+  ▼             ▼               ▼                ▼
+┌──────────┐ ┌───────┐  ┌───────────────┐ ┌─────────────┐
+│WebSocket │ │ State │  │  STT Service  │ │ TTS Service │
+│ Server   │ │Manager│  │(Whisper Model)│ │  (AllTalk)  │
+└──────────┘ └───────┘  └───────────────┘ └──────┬──────┘
+      │         │               │                │
+      │         │               │                │
+      │         │               ▼                │
+      │         │        ┌──────────────┐        │
+      │         │        │ LLM Client   │        │
+      │         │        │   (Ollama)   │        │
+      │         │        └──────────────┘        │
+      │         │               │                │
+      │         │               ▼                │
+      │         │        ┌──────────────┐        │
+      │         │        │ Response     │        │
+      │         │        │ Generation   │        │
+      │         │        └──────────────┘        │
+      │         │               │                │
+      ▼         ▼               ▼                ▼
+┌───────────────────────────────────────────────────────────────────────┐
+│                        Error Handler                                  │
+└───────────────────────────────────────────────────────────────────────┘
+```
 
-2. **Oculus Quest Client**: Provides the VR interface for the user (see Unity README for details)
-   - Built in Unity with WebSocket communication
-   - Handles audio capture and playback
-   - Animates interviewer avatar based on conversation state
-   - Displays transcript of conversation for better user experience
+### Component Responsibilities
 
-3. **External Services**:
-   - **Ollama**: Local LLM service running the Mistral model
-   - **AllTalk**: High-quality TTS service using direct API (no streaming)
+1. **EnhancedServer**: Central orchestrator that initializes and manages all components
+2. **WebSocketServer**: Handles client connections and message routing
+3. **StateManager**: Maintains conversation state and ensures valid transitions
+4. **STTService**: Converts user audio to text using Whisper models
+5. **TTSService**: Converts LLM responses to audio using AllTalk or fallbacks
+6. **OllamaClient**: Communicates with Ollama LLM API for response generation
+7. **ErrorHandler**: Provides specialized recovery strategies for different error types
 
-### Data Flow
+## Data Flow
 
-1. User speaks in VR headset
-2. Audio is captured and sent to server via WebSocket
-3. Server transcribes speech using Whisper
-4. User's transcript is displayed in the VR interface
-5. "Interviewer is thinking..." message is shown
-6. Transcript is processed by Ollama LLM
-7. Response is converted to speech using AllTalk direct API
-8. LLM response text is displayed in the transcript panel
-9. Audio is sent back to VR client and played through avatar
-10. Avatar speaks and animates in sync with audio
+1. **Client Connection Establishment**
+   - VR client connects to server via WebSocket
+   - Server assigns unique session ID and initializes session
+   - Client and server exchange capabilities information
+
+2. **Audio Input Processing**
+   - User speaks in VR headset
+   - Audio is captured and encoded in base64
+   - Audio data is sent to server with metadata
+   - Server transcribes speech using STT service
+   - Transcript is displayed in VR interface
+
+3. **LLM Response Generation**
+   - Server transitions to PROCESSING state
+   - "Interviewer is thinking..." message displayed
+   - Heartbeat messages maintain connection
+   - LLM generates contextually appropriate response
+   - Response is added to conversation history
+
+4. **Audio Output Generation**
+   - LLM response is sent to TTS service
+   - AllTalk generates audio response
+   - Audio data is encoded and sent to client
+   - Client plays audio through avatar
+   - Transcript is updated with interviewer response
+
+5. **State Transitions**
+   - IDLE → LISTENING → PROCESSING → RESPONDING → WAITING
+   - State changes are communicated to client
+   - State includes metadata for UI updates
+   - Error states trigger recovery strategies
 
 ## Project Structure
 
@@ -109,21 +236,47 @@ Fixed the issue where client and server had different session IDs:
 D:\vr_interview_system\
 ├── app/                  # Core application modules
 │   ├── state/            # State management
-│   ├── utils/            # Utility functions 
+│   │   ├── manager.py    # State machine implementation
+│   │   └── session.py    # Session data management
+│   ├── utils/            # Utility functions
+│   │   ├── config.py     # Configuration management
+│   │   ├── error_handler.py # Error handling system
+│   │   ├── heartbeat.py  # Connection keepalive
+│   │   └── logging.py    # Logging configuration
 │   └── websocket/        # WebSocket communication
+│       ├── enhanced_stream_processor.py # Optimized audio pipeline
+│       ├── protocol.py   # Message protocol definition
+│       └── server_enhanced_fixed.py # WebSocket server
 ├── config/               # Configuration files
+│   └── config.json       # Main configuration
 ├── data/                 # Data storage
+│   ├── audio/            # Audio file storage
+│   ├── cache/            # Response cache storage
+│   └── conversations/    # Conversation history
 ├── docs/                 # Documentation
+│   ├── system_overview.md          # System architecture overview
+│   ├── websocket_documentation.md  # WebSocket implementation
+│   ├── state_management_documentation.md # State machine
+│   ├── audio_processing_documentation.md # Audio processing
+│   ├── llm_integration_documentation.md  # LLM integration
+│   ├── error_handling_documentation.md   # Error handling
+│   ├── function_reference.md             # Function reference
+│   └── ...               # Additional documentation
 ├── services/             # Service integrations
 │   ├── audio/            # Audio processing services
+│   │   ├── alltalk_tts_direct.py # AllTalk TTS integration
+│   │   ├── gtts_only_service.py  # Google TTS fallback
+│   │   └── stt_wrapper.py        # Speech-to-text wrapper
 │   └── llm/              # Language model services
-├── tools/                # Utility tools and diagnostics
-└── server.py             # Main server entry point
+│       ├── ollama_client.py      # Ollama API client
+│       └── templates/            # Response templates
+├── server.py             # Main server entry point
+└── README.md             # Project documentation
 ```
 
-### Key Files and Their Purposes
+## Key Files and Their Purposes
 
-#### Core Server Files
+### Core Server Files
 
 - **`server.py`**: Main entry point that initializes all components and starts the WebSocket server. It handles server startup, shutdown, and error registration.
 
@@ -137,7 +290,7 @@ D:\vr_interview_system\
 
 - **`app/state/session.py`**: Implements the session class that stores conversation context and metadata.
 
-- **`app/utils/enhanced_error_handler.py`**: Provides comprehensive error handling with pattern detection, adaptive recovery, and graceful degradation strategies.
+- **`app/utils/error_handler.py`**: Provides comprehensive error handling with pattern detection, adaptive recovery, and graceful degradation strategies.
 
 - **`app/utils/config.py`**: Configuration loading and management.
 
@@ -145,7 +298,7 @@ D:\vr_interview_system\
 
 - **`app/utils/heartbeat.py`**: Implements heartbeat mechanism for long-running operations.
 
-#### Service Files
+### Service Files
 
 - **`services/audio/alltalk_tts_direct.py`**: Direct-API-only AllTalk TTS integration with multiple API fallback strategies and gTTS fallback.
 
@@ -155,84 +308,103 @@ D:\vr_interview_system\
 
 - **`services/llm/ollama_client.py`**: Client for the Ollama LLM API with context management and error handling.
 
-## Key Technical Challenges
+## Configuration
 
-### 1. Preventing WebSocket Blocking
-The system uses asyncio to run CPU-intensive operations like STT, LLM, and TTS in separate threads, preventing them from blocking the WebSocket communication. It uses task tracking, heartbeats, and timeouts to ensure responsiveness.
+The system's behavior is configured through `config/config.json`, with the following key sections:
 
-### 2. AllTalk Direct API Integration
-The AllTalk TTS service integration now uses direct API calls exclusively with multiple fallback strategies:
-- Multiple API endpoints are tried in sequence (tts-generate, synthesize, tts)
-- Direct API timeout handling with appropriate error recovery
-- gTTS as ultimate fallback when AllTalk is unavailable or fails
+### Server Configuration
+```json
+"server": {
+  "host": "0.0.0.0",
+  "port": 8765,
+  "log_level": "INFO"
+}
+```
 
-### 3. State Management
-The state machine ensures reliable conversation flow with proper transitions, deadlock prevention, and error recovery. It tracks session state with metadata and broadcasts state changes to clients.
+### Audio Configuration
+```json
+"audio": {
+  "stt_model": "medium",
+  "tts_model": "en",
+  "sample_rate": 16000,
+  "channels": 1
+}
+```
 
-### 4. Error Recovery
-The enhanced error handler provides robust recovery from various failure types with pattern detection and adaptive strategies:
-- Progressive fallback for repeated errors
-- Cooldown periods between recovery attempts
-- Maximum recovery attempts to prevent infinite loops
-- Detection of recurring error patterns
+### Storage Configuration
+```json
+"storage": {
+  "audio_dir": "data/audio",
+  "conversation_dir": "data/conversations",
+  "retention_days": 30
+}
+```
 
-### 5. Client-Server Synchronization
-The system implements proper session ID synchronization and reconnection handling to ensure a coherent conversation experience even if the connection is temporarily interrupted.
+### LLM Configuration
+```json
+"ollama": {
+  "url": "http://localhost:11434",
+  "model": "mistral:latest",
+  "context_length": 8192,
+  "system_prompt": "...",
+  "options": {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "top_k": 40,
+    "repeat_penalty": 1.1,
+    "num_predict": 100,
+    "seed": 42,
+    "timeout": 60
+  }
+}
+```
 
-## Setup and Running
+### TTS Configuration
+```json
+"alltalk": {
+  "url": "http://127.0.0.1:7851",
+  "voice": "female_06.wav",
+  "format": "wav",
+  "retries": 3,
+  "timeout": 60,
+  "direct_api_timeout": 60,
+  "alltalk_dir": "D:/AllTalk/alltalk_tts",
+  "default_language": "en"
+}
+```
 
-### Initial Setup
+### Heartbeat Configuration
+```json
+"heartbeat": {
+  "enabled": true,
+  "interval": 5.0
+}
+```
+
+Configuration can also be overridden through environment variables using the `VR_INTERVIEW_` prefix and double underscores for nested keys. For example:
+
+```
+VR_INTERVIEW_SERVER__PORT=8080
+VR_INTERVIEW_OLLAMA__URL=http://ollama:11434
+```
+
+## Initial Setup
 
 1. Run the setup script to create necessary files:
    ```
    run_setup.bat
    ```
 
-2. Start the server:
+2. Install dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+
+3. Start the server:
    ```
    python server.py
    ```
 
-### Configuration
+## Further Information
 
-The system's behavior can be configured through `config/config.json`, with the following key sections:
-
-- **server**: WebSocket server settings (host, port, etc.)
-- **audio**: Speech-to-text and text-to-speech settings
-- **ollama**: LLM integration settings
-- **alltalk**: AllTalk TTS service settings
-- **storage**: File storage locations and retention settings
-
-## Recommended Development Practices
-
-When working on this system:
-
-1. Follow the asynchronous programming patterns with proper task tracking
-2. Implement comprehensive error handling with fallback strategies
-3. Use direct API calls with proper timeout handling
-4. Maintain the state machine integrity with valid transitions
-5. Consider client capabilities for optimal audio delivery
-
-## Common Issues Claude Can Help With
-
-1. **Async Programming Patterns**:
-   - Task creation and tracking
-   - Proper exception handling in async code
-   - Preventing deadlocks and race conditions
-
-2. **Error Handling Strategies**:
-   - Multi-level fallback mechanisms
-   - Service availability detection
-   - Graceful degradation patterns
-
-3. **AllTalk Integration**:
-   - File discovery algorithms
-   - API fallback sequences
-   - Audio file format handling
-
-4. **LLM Context Management**:
-   - Efficient prompt formatting
-   - History pruning strategies
-   - Context window optimization
-
-By understanding these components and their interactions, you can effectively enhance and maintain the VR Interview System for a reliable and immersive interview practice experience.
+For more detailed information about specific components, please refer to the documentation in the `docs` directory. For information about the Unity client implementation, please refer to `D:\VRSystemTest\README_FOR_CLAUDE.md`.

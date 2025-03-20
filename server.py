@@ -27,6 +27,7 @@ logger.info(f"Current working directory: {os.getcwd()}")
 logger.info(f"Server script location: {os.path.abspath(__file__)}")
 
 import asyncio
+import base64
 import json
 import logging
 import signal
@@ -281,20 +282,44 @@ class EnhancedServer:
     async def _handle_tts_error(self, session_id, exception, context):
         """Handle errors in text-to-speech processing with improved recovery"""
         try:
+            # Check if this is a timeout error
+            is_timeout = isinstance(exception, asyncio.TimeoutError) or "timeout" in str(exception).lower()
+            
             # If we have the text response, send it directly as a fallback
             text_response = context.get("text_response")
             if text_response and "websocket" in context:
                 websocket = context["websocket"]
-                fallback_message = {
-                    "type": "text_response",
-                    "text": text_response,
-                    "message": "Audio couldn't be generated. Displaying text instead."
-                }
-                await websocket.send(json.dumps(fallback_message))
+                
+                # For timeout errors, inform the client that we're still trying
+                if is_timeout:
+                    trying_message = {
+                        "type": "system_message",
+                        "message": "Still generating audio, please wait a moment..."
+                    }
+                    try:
+                        await websocket.send(json.dumps(trying_message))
+                    except:
+                        # Connection might be closed, ignore
+                        pass
+                    
+                    # Schedule a task to keep trying to get the audio
+                    asyncio.create_task(self._check_delayed_tts_response(
+                        session_id, 
+                        text_response, 
+                        context
+                    ))
+                else:
+                    # For non-timeout errors, just show text
+                    fallback_message = {
+                        "type": "text_response",
+                        "text": text_response,
+                        "message": "Audio couldn't be generated. Displaying text instead."
+                    }
+                    await websocket.send(json.dumps(fallback_message))
                 
             # Transition to WAITING state
             await self.state_manager.transition_state(session_id, "WAITING", {
-                "message": "Ready for next question"
+                "message": "Ready for next question" if not is_timeout else "Still generating audio..."
             })
             
             return True  # Indicate successful recovery
@@ -306,6 +331,70 @@ class EnhancedServer:
             except:
                 pass
             return False
+            
+    async def _check_delayed_tts_response(self, session_id, text_response, context):
+        """Check if a delayed TTS response becomes available"""
+        try:
+            self.logger.info(f"Starting delayed TTS response check for session {session_id}")
+            
+            # Wait a bit to allow TTS to finish
+            await asyncio.sleep(10)
+            
+            # Check if session still exists
+            session = self.state_manager.get_session(session_id)
+            if not session:
+                self.logger.warning(f"Session {session_id} no longer exists for delayed TTS")
+                return
+                
+            # Check if websocket is still connected
+            websocket = self.websocket_server.active_connections.get(session_id)
+            if not websocket:
+                self.logger.warning(f"Websocket for session {session_id} no longer connected")
+                return
+                
+            # Try to find the audio file that might have been generated
+            try:
+                # Construct a filename pattern that matches what alltalk_tts_direct would use
+                timeframe = int(time.time()) - 120  # Look for files from the last 2 minutes
+                file_pattern = f"vr_interview_{timeframe}"
+                
+                # Ask the TTS service to look for recent files
+                if hasattr(self.tts_service, '_try_load_output_file'):
+                    audio_data = self.tts_service._try_load_output_file(file_pattern)
+                    
+                    if audio_data and len(audio_data) > 1000:
+                        self.logger.info(f"Found delayed TTS response for session {session_id}: {len(audio_data)} bytes")
+                        
+                        # Send the audio to the client
+                        audio_message = {
+                            "type": "audio_response",
+                            "timestamp": time.time(),
+                            "format": "wav",
+                            "data": base64.b64encode(audio_data).decode('utf-8'),
+                            "text": text_response  # Include text as fallback
+                        }
+                        await websocket.send(json.dumps(audio_message))
+                        
+                        self.logger.info(f"Sent delayed audio response to {session_id}")
+                        return
+            except Exception as e:
+                self.logger.error(f"Error checking for delayed TTS files: {e}")
+                
+            # No audio found, or exception occurred - send text fallback
+            self.logger.warning(f"No delayed TTS response found for session {session_id}, using text fallback")
+            try:
+                fallback_message = {
+                    "type": "text_response",
+                    "text": text_response,
+                    "message": "Audio generation took too long. Displaying text instead."
+                }
+                await websocket.send(json.dumps(fallback_message))
+            except Exception as e:
+                self.logger.error(f"Error sending delayed text fallback: {e}")
+                
+        except Exception as e:
+            self.logger.error(f"Error in delayed TTS response check: {e}")
+
             
     async def _handle_websocket_error(self, session_id, exception, context):
         """Handle WebSocket connection errors with improved cleanup"""

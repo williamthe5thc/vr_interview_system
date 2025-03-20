@@ -36,11 +36,11 @@
   },
     "alltalk": {
       "url": "http://127.0.0.1:7851",
-      "voice": "Clint_Eastwood CC3 (enhanced).wav",
+      "voice": "female_06.wav",
       "format": "wav",
       "retries": 3,
-      "timeout": 30,
-      "direct_api_timeout": 40,
+      "timeout": 60,
+      "direct_api_timeout": 60,
       "alltalk_dir": "D:/AllTalk/alltalk_tts",
       "default_language": "en"
     }

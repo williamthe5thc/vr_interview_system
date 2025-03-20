@@ -29,7 +29,7 @@ class AllTalkTTSDirectService:
         self.logger.info(f"Initializing AllTalk TTS Direct with URL: {self.base_url}")
         
         # Store the voice
-        self.voice = voice or "alloy"
+        self.voice = voice or "female_06.wav"
         
         # Store the config
         self.config = config or {}
@@ -260,7 +260,9 @@ class AllTalkTTSDirectService:
     def _try_tts_generate_api(self, text: str) -> Optional[bytes]:
         """Try generating speech using tts-generate API"""
         try:
-            output_file = f"vr_interview_{int(time.time())}"
+            # Create a safe output filename without special characters
+            timestamp = int(time.time())
+            output_file = f"vr_interview_{timestamp}"
             
             response = requests.post(
                 f"{self.base_url}/api/tts-generate",
@@ -322,7 +324,8 @@ class AllTalkTTSDirectService:
             if response.status_code == 200:
                 if len(response.content) > 1000:
                     # Save to local file for caching
-                    output_file = f"vr_interview_synth_{int(time.time())}"
+                    timestamp = int(time.time())
+                    output_file = f"vr_interview_synth_{timestamp}"
                     try:
                         with open(f"audio_out/{output_file}.wav", "wb") as f:
                             f.write(response.content)
@@ -361,7 +364,8 @@ class AllTalkTTSDirectService:
             if response.status_code == 200:
                 if len(response.content) > 1000:
                     # Save to local file for caching
-                    output_file = f"vr_interview_tts_{int(time.time())}"
+                    timestamp = int(time.time())
+                    output_file = f"vr_interview_tts_{timestamp}"
                     try:
                         with open(f"audio_out/{output_file}.wav", "wb") as f:
                             f.write(response.content)
@@ -419,7 +423,8 @@ class AllTalkTTSDirectService:
             self.logger.info(f"gTTS synthesis complete: {len(audio_data)} bytes in {duration:.2f}s")
             
             # Save to file for possible retrieval later
-            output_file = f"vr_interview_gtts_{int(time.time())}"
+            timestamp = int(time.time())
+            output_file = f"vr_interview_gtts_{timestamp}"
             
             try:
                 with open(f"audio_out/{output_file}.wav", "wb") as f:
