@@ -119,7 +119,7 @@ class StateManager:
             return None
         return session.state
         
-    async def transition_state(self, session_id, new_state, metadata=None, timeout=2.0):
+    async def transition_state(self, session_id, new_state, metadata=None, timeout=5.0):
         """
         Transition session to a new state and broadcast the change.
         
@@ -155,7 +155,7 @@ class StateManager:
                 # Use wait_for with a timeout to avoid deadlocks
                 await asyncio.wait_for(
                     self._state_locks[session_id].acquire(),
-                    timeout=timeout
+                    timeout=timeout  # Increased from 2.0 to 5.0 seconds
                 )
                 lock_acquired = True
             except asyncio.TimeoutError:
@@ -273,6 +273,15 @@ class StateManager:
         return next_state in valid_transitions.get(current, [])
         
     async def _handle_deadlock(self, session_id, new_state, timeout):
+        """
+        Improved deadlock detection and resolution.
+        Ensures conversations can continue even after state transition problems.
+        
+        Args:
+            session_id: The session ID experiencing potential deadlock
+            new_state: The state we're attempting to transition to
+            timeout: The lock acquisition timeout (increased to 5.0 seconds)
+        """
         """
         Improved deadlock detection and resolution.
         Ensures conversations can continue even after state transition problems.

@@ -41,8 +41,7 @@ from app.websocket.server_enhanced_fixed import WebSocketServer
 from app.state.manager import StateManager
 from services.audio.stt_wrapper import STTService  # Fixed import
 from services.audio.tts import TTSService
-from services.audio.alltalk_tts_improved import AllTalkTTSService
-from services.llm.ollama_client import OllamaClient
+from services.llm.Ollama_client import OllamaClient
 from app.utils.logging import setup_logging
 from app.utils.config import load_config
 from app.utils.error_handler import ErrorHandler
@@ -92,20 +91,17 @@ class EnhancedServer:
         self.state_manager = StateManager()
         self.stt_service = STTService(self.config["audio"]["stt_model"])
         
-        # Try to use AllTalk Direct first, fall back to gTTS if needed
         try:
             # First try to initialize AllTalk Direct
-            from services.audio.alltalk_tts_direct import AllTalkTTSDirectService
+            from services.audio.tts import TTSService
             self.logger.info("Attempting to use AllTalk Direct for TTS")
-            self.tts_service = AllTalkTTSDirectService(
-                url=self.config["alltalk"]["url"],
-                voice=self.config["alltalk"]["voice"],
-                config=self.config["alltalk"]
-            )
+            
+            # Pass ONLY the config parameter
+            self.tts_service = TTSService(config=self.config)
             
             # Test if AllTalk is actually available
-            if self.tts_service.is_available():
-                self.logger.info("Successfully connected to AllTalk TTS service using direct API")
+            if hasattr(self.tts_service, 'is_available') and self.tts_service.is_available():
+                self.logger.info("Successfully connected to AllTalk TTS service")
             else:
                 self.logger.warning("AllTalk not available, falling back to gTTS")
                 from services.audio.gtts_only_service import GTTSOnlyService
@@ -114,7 +110,6 @@ class EnhancedServer:
             self.logger.warning(f"Error initializing AllTalk Direct: {e}, falling back to gTTS")
             from services.audio.gtts_only_service import GTTSOnlyService
             self.tts_service = GTTSOnlyService(language='en')
-            
         # Initialize LLM client with improved configuration
         ollama_config = self.config["ollama"]
         self.llm_client = OllamaClient(
@@ -140,6 +135,10 @@ class EnhancedServer:
         self._setup_signal_handlers()
         
         self.logger.info("Enhanced server initialized")
+        
+        # GPU monitoring disabled
+        logging.info("GPU monitoring disabled")
+        gpu_monitor = None
 
     def _load_config(self, config_path):
         """Load configuration from file with fallback to default"""
@@ -509,6 +508,27 @@ class EnhancedServer:
         except Exception as e:
             self.logger.error(f"Error preloading STT model: {e}")
             self.logger.warning("Will use lazy loading instead, expect delay on first transcription")
+            
+        # Preload the LLM model by making a simple request
+        self.logger.info("Preloading LLM model (this may take a moment)...")
+        try:
+            # Make a simple request to ensure model is loaded
+            start_time = time.time()
+            # Use a simple prompt to initialize the model
+            test_prompt = "Hello"
+            await asyncio.to_thread(
+                self.llm_client.generate_response,
+                test_prompt,
+                [],  # Empty context
+                None,  # Default timeout
+                None,  # Default retries
+                "greeting"  # Use greeting stage
+            )
+            load_time = time.time() - start_time
+            self.logger.info(f"LLM model preloaded successfully in {load_time:.2f} seconds")
+        except Exception as e:
+            self.logger.error(f"Error preloading LLM model: {e}")
+            self.logger.warning("Will use lazy loading instead, expect delay on first response")
             
         # Now start the server
         self.logger.info(f"Starting server on {self.config['server']['host']}:{self.config['server']['port']}")

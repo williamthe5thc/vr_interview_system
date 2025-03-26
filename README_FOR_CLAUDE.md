@@ -38,7 +38,16 @@ Comprehensive documentation is available in the `docs` directory, organized by s
    - Task tracking system for proper resource management
 
 2. **State Machine**
-   - Manages conversation flow through defined states (IDLE, LISTENING, PROCESSING, RESPONDING, WAITING)
+   - Manages conversation flow through defined states:
+     - IDLE: Initial state, ready for conversation
+     - LISTENING: Receiving audio from user
+     - PROCESSING: Generic processing state
+     - PROCESSING_STT: Specifically transcribing speech to text
+     - PROCESSING_LLM: Generating response with the language model
+     - PROCESSING_TTS: Converting text response to audio
+     - RESPONDING: Sending audio response to client
+     - WAITING: Waiting for next user input
+     - ERROR: Error state with recovery mechanisms
    - Validates state transitions with deadlock prevention
    - Provides recovery paths for error conditions
 
@@ -77,12 +86,25 @@ Comprehensive documentation is available in the `docs` directory, organized by s
    - Added proper client-server session ID synchronization
    - Implemented session ID mapping to handle mismatches
    - Added server-side session ID tracking for improved reliability
+   - Separate tracking of client-generated and server-assigned IDs
+
+4. **Cleanup and Consolidation**:
+   - Removed redundant and experimental files
+   - Consolidated multiple TTS implementations into a single robust service
+   - Removed legacy streaming implementation in favor of direct API approach
+   - Simplified heartbeat implementation with enhanced features
 
 4. **Enhanced UI Experience**:
    - Added transcript display showing user and interviewer text
    - Implemented "Interviewer is thinking..." messages during processing
    - Added progress update messages during long processing operations
    - Created notification system for important status updates
+
+5. **Enhanced Message Validation**:
+   - Added validation for all outgoing WebSocket messages
+   - Ensured required fields (type, session_id, timestamp) are always present
+   - Implemented granular processing state reporting (PROCESSING_STT, PROCESSING_LLM, PROCESSING_TTS)
+   - Enhanced progress visualization with detailed state information
 
 ## Common Problems
 
@@ -223,10 +245,10 @@ Comprehensive documentation is available in the `docs` directory, organized by s
    - Transcript is updated with interviewer response
 
 5. **State Transitions**
-   - IDLE → LISTENING → PROCESSING → RESPONDING → WAITING
-   - State changes are communicated to client
-   - State includes metadata for UI updates
-   - Error states trigger recovery strategies
+   - IDLE → LISTENING → PROCESSING_STT → PROCESSING_LLM → PROCESSING_TTS → RESPONDING → WAITING
+   - State changes are communicated to client with detailed metadata
+   - Each processing state includes progress information and stage-specific messages
+   - Error states trigger appropriate recovery strategies
 
 ## Project Structure
 
@@ -264,12 +286,20 @@ D:\vr_interview_system\
 │   └── ...               # Additional documentation
 ├── services/             # Service integrations
 │   ├── audio/            # Audio processing services
-│   │   ├── alltalk_tts_direct.py # AllTalk TTS integration
 │   │   ├── gtts_only_service.py  # Google TTS fallback
-│   │   └── stt_wrapper.py        # Speech-to-text wrapper
+│   │   ├── stt.py              # Speech-to-text service
+│   │   ├── stt_wrapper.py     # Speech-to-text wrapper
+│   │   └── tts.py              # Unified text-to-speech service
 │   └── llm/              # Language model services
 │       ├── ollama_client.py      # Ollama API client
+│       ├── scenarios/           # Interview scenario definitions
+│       │   └── job_interview.py  # Job interview scenario framework
 │       └── templates/            # Response templates
+├── test_scripts/         # Testing utilities
+│   ├── test_alltalk.py         # AllTalk diagnostics
+│   ├── test_alltalk2.py        # AllTalk voice testing
+│   ├── test_alltalk_streaming.py # AllTalk streaming tests
+│   └── test_integration.py     # Full system integration testing
 ├── server.py             # Main server entry point
 └── README.md             # Project documentation
 ```
@@ -296,17 +326,17 @@ D:\vr_interview_system\
 
 - **`app/utils/logging.py`**: Configures and sets up logging throughout the application.
 
-- **`app/utils/heartbeat.py`**: Implements heartbeat mechanism for long-running operations.
+- **`app/utils/heartbeat.py`**: Implements heartbeat mechanism for long-running operations with dynamic intervals.
 
 ### Service Files
 
-- **`services/audio/alltalk_tts_direct.py`**: Direct-API-only AllTalk TTS integration with multiple API fallback strategies and gTTS fallback.
+- **`services/audio/stt.py`**: Speech-to-text service using Whisper with GPU acceleration.
 
-- **`services/audio/stt_wrapper.py`**: Speech-to-text service using Whisper with additional error handling.
+- **`services/audio/stt_wrapper.py`**: Speech-to-text wrapper with fallback mechanisms and additional error handling.
 
-- **`services/audio/gtts_only_service.py`**: Fallback TTS service using Google TTS when AllTalk is unavailable.
+- **`services/audio/tts.py`**: Unified TTS service with AllTalk integration, multiple API fallback strategies, and gTTS fallback.
 
-- **`services/llm/ollama_client.py`**: Client for the Ollama LLM API with context management and error handling.
+- **`services/llm/ollama_client.py`**: Client for the Ollama LLM API with context management, caching, and error handling.
 
 ## Configuration
 
@@ -367,9 +397,14 @@ The system's behavior is configured through `config/config.json`, with the follo
   "format": "wav",
   "retries": 3,
   "timeout": 60,
-  "direct_api_timeout": 60,
   "alltalk_dir": "D:/AllTalk/alltalk_tts",
-  "default_language": "en"
+  "default_language": "en",
+  "endpoints": ["tts-generate", "synthesize", "tts"]
+},
+"cache": {
+  "enabled": true,
+  "dir": "data/cache/tts",
+  "max_entries": 1000
 }
 ```
 
