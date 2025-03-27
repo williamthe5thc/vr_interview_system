@@ -1,0 +1,842 @@
+[
+  {
+    "voice": "Arnold.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 1.389822006225586,
+    "error": null,
+    "file_size": 304,
+    "test_time": "2025-03-19T11:23:39.084393"
+  },
+  {
+    "voice": "Arnold.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.5861663818359375,
+    "error": null,
+    "file_size": 307,
+    "test_time": "2025-03-19T11:23:40.475718"
+  },
+  {
+    "voice": "Arnold.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.651794195175171,
+    "error": null,
+    "file_size": 301,
+    "test_time": "2025-03-19T11:23:42.062885"
+  },
+  {
+    "voice": "Arnold.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 10.726810216903687,
+    "error": null,
+    "file_size": 316,
+    "test_time": "2025-03-19T11:23:44.714679"
+  },
+  {
+    "voice": "Clint_Eastwood CC3 (enhanced).wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": false,
+    "time_taken": 0.005003452301025391,
+    "error": "HTTP 400: {\"error\":\"output_file_name: output_file_name needs to be the name without any special characters or file extension, e.g., 'filename'.\"}",
+    "file_size": null,
+    "test_time": "2025-03-19T11:23:55.442993"
+  },
+  {
+    "voice": "Clint_Eastwood CC3 (enhanced).wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": false,
+    "time_taken": 0.02815103530883789,
+    "error": "HTTP 400: {\"error\":\"output_file_name: output_file_name needs to be the name without any special characters or file extension, e.g., 'filename'.\"}",
+    "file_size": null,
+    "test_time": "2025-03-19T11:23:55.447996"
+  },
+  {
+    "voice": "Clint_Eastwood CC3 (enhanced).wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": false,
+    "time_taken": 0.005013227462768555,
+    "error": "HTTP 400: {\"error\":\"output_file_name: output_file_name needs to be the name without any special characters or file extension, e.g., 'filename'.\"}",
+    "file_size": null,
+    "test_time": "2025-03-19T11:23:55.476654"
+  },
+  {
+    "voice": "Clint_Eastwood CC3 (enhanced).wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": false,
+    "time_taken": 0.025543689727783203,
+    "error": "HTTP 400: {\"error\":\"output_file_name: output_file_name needs to be the name without any special characters or file extension, e.g., 'filename'.\"}",
+    "file_size": null,
+    "test_time": "2025-03-19T11:23:55.481668"
+  },
+  {
+    "voice": "Clint_Eastwood CC3.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.5235452651977539,
+    "error": null,
+    "file_size": 340,
+    "test_time": "2025-03-19T11:23:55.507211"
+  },
+  {
+    "voice": "Clint_Eastwood CC3.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.4377901554107666,
+    "error": null,
+    "file_size": 343,
+    "test_time": "2025-03-19T11:23:56.030756"
+  },
+  {
+    "voice": "Clint_Eastwood CC3.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.588099956512451,
+    "error": null,
+    "file_size": 337,
+    "test_time": "2025-03-19T11:23:57.468547"
+  },
+  {
+    "voice": "Clint_Eastwood CC3.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 9.317229509353638,
+    "error": null,
+    "file_size": 352,
+    "test_time": "2025-03-19T11:24:00.057150"
+  },
+  {
+    "voice": "David_Attenborough CC3.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.42893123626708984,
+    "error": null,
+    "file_size": 352,
+    "test_time": "2025-03-19T11:24:09.374380"
+  },
+  {
+    "voice": "David_Attenborough CC3.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.5871570110321045,
+    "error": null,
+    "file_size": 355,
+    "test_time": "2025-03-19T11:24:09.803311"
+  },
+  {
+    "voice": "David_Attenborough CC3.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 3.576768636703491,
+    "error": null,
+    "file_size": 349,
+    "test_time": "2025-03-19T11:24:11.391468"
+  },
+  {
+    "voice": "David_Attenborough CC3.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 11.050905704498291,
+    "error": null,
+    "file_size": 364,
+    "test_time": "2025-03-19T11:24:14.969236"
+  },
+  {
+    "voice": "James_Earl_Jones CC3.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.49743127822875977,
+    "error": null,
+    "file_size": 346,
+    "test_time": "2025-03-19T11:24:26.020142"
+  },
+  {
+    "voice": "James_Earl_Jones CC3.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.3805761337280273,
+    "error": null,
+    "file_size": 349,
+    "test_time": "2025-03-19T11:24:26.518572"
+  },
+  {
+    "voice": "James_Earl_Jones CC3.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.859583616256714,
+    "error": null,
+    "file_size": 343,
+    "test_time": "2025-03-19T11:24:27.899681"
+  },
+  {
+    "voice": "James_Earl_Jones CC3.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 10.183524131774902,
+    "error": null,
+    "file_size": 358,
+    "test_time": "2025-03-19T11:24:30.759264"
+  },
+  {
+    "voice": "Jordan (2).wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": false,
+    "time_taken": 0.00450444221496582,
+    "error": "HTTP 400: {\"error\":\"output_file_name: output_file_name needs to be the name without any special characters or file extension, e.g., 'filename'.\"}",
+    "file_size": null,
+    "test_time": "2025-03-19T11:24:40.944291"
+  },
+  {
+    "voice": "Jordan (2).wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": false,
+    "time_taken": 0.00551295280456543,
+    "error": "HTTP 400: {\"error\":\"output_file_name: output_file_name needs to be the name without any special characters or file extension, e.g., 'filename'.\"}",
+    "file_size": null,
+    "test_time": "2025-03-19T11:24:40.948796"
+  },
+  {
+    "voice": "Jordan (2).wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": false,
+    "time_taken": 0.005008697509765625,
+    "error": "HTTP 400: {\"error\":\"output_file_name: output_file_name needs to be the name without any special characters or file extension, e.g., 'filename'.\"}",
+    "file_size": null,
+    "test_time": "2025-03-19T11:24:40.954308"
+  },
+  {
+    "voice": "Jordan (2).wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": false,
+    "time_taken": 0.004002809524536133,
+    "error": "HTTP 400: {\"error\":\"output_file_name: output_file_name needs to be the name without any special characters or file extension, e.g., 'filename'.\"}",
+    "file_size": null,
+    "test_time": "2025-03-19T11:24:40.959317"
+  },
+  {
+    "voice": "Jordan.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.4649636745452881,
+    "error": null,
+    "file_size": 304,
+    "test_time": "2025-03-19T11:24:40.964320"
+  },
+  {
+    "voice": "Jordan.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.1384520530700684,
+    "error": null,
+    "file_size": 307,
+    "test_time": "2025-03-19T11:24:41.430326"
+  },
+  {
+    "voice": "Jordan.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 3.3372933864593506,
+    "error": null,
+    "file_size": 301,
+    "test_time": "2025-03-19T11:24:42.569783"
+  },
+  {
+    "voice": "Jordan.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 8.891645669937134,
+    "error": null,
+    "file_size": 316,
+    "test_time": "2025-03-19T11:24:45.907077"
+  },
+  {
+    "voice": "Morgan_Freeman CC3.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.6804530620574951,
+    "error": null,
+    "file_size": 340,
+    "test_time": "2025-03-19T11:24:54.799225"
+  },
+  {
+    "voice": "Morgan_Freeman CC3.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.4974031448364258,
+    "error": null,
+    "file_size": 343,
+    "test_time": "2025-03-19T11:24:55.479678"
+  },
+  {
+    "voice": "Morgan_Freeman CC3.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 4.938249588012695,
+    "error": null,
+    "file_size": 337,
+    "test_time": "2025-03-19T11:24:56.977081"
+  },
+  {
+    "voice": "Morgan_Freeman CC3.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 9.966198921203613,
+    "error": null,
+    "file_size": 352,
+    "test_time": "2025-03-19T11:25:01.915331"
+  },
+  {
+    "voice": "Sophie_Anderson CC3.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.4990081787109375,
+    "error": null,
+    "file_size": 343,
+    "test_time": "2025-03-19T11:25:11.881530"
+  },
+  {
+    "voice": "Sophie_Anderson CC3.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.5111174583435059,
+    "error": null,
+    "file_size": 346,
+    "test_time": "2025-03-19T11:25:12.383040"
+  },
+  {
+    "voice": "Sophie_Anderson CC3.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.9011452198028564,
+    "error": null,
+    "file_size": 340,
+    "test_time": "2025-03-19T11:25:13.894158"
+  },
+  {
+    "voice": "Sophie_Anderson CC3.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 9.416214942932129,
+    "error": null,
+    "file_size": 355,
+    "test_time": "2025-03-19T11:25:16.795303"
+  },
+  {
+    "voice": "female_01.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.3537881374359131,
+    "error": null,
+    "file_size": 313,
+    "test_time": "2025-03-19T11:25:26.213519"
+  },
+  {
+    "voice": "female_01.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.2234649658203125,
+    "error": null,
+    "file_size": 316,
+    "test_time": "2025-03-19T11:25:26.567307"
+  },
+  {
+    "voice": "female_01.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.3070008754730225,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:25:27.790772"
+  },
+  {
+    "voice": "female_01.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 7.807597398757935,
+    "error": null,
+    "file_size": 325,
+    "test_time": "2025-03-19T11:25:30.098773"
+  },
+  {
+    "voice": "female_02.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.6683595180511475,
+    "error": null,
+    "file_size": 313,
+    "test_time": "2025-03-19T11:25:37.906370"
+  },
+  {
+    "voice": "female_02.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.298856496810913,
+    "error": null,
+    "file_size": 316,
+    "test_time": "2025-03-19T11:25:38.574730"
+  },
+  {
+    "voice": "female_02.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.7321817874908447,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:25:39.874596"
+  },
+  {
+    "voice": "female_02.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 9.246251821517944,
+    "error": null,
+    "file_size": 325,
+    "test_time": "2025-03-19T11:25:42.606777"
+  },
+  {
+    "voice": "female_03.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.4945719242095947,
+    "error": null,
+    "file_size": 313,
+    "test_time": "2025-03-19T11:25:51.853029"
+  },
+  {
+    "voice": "female_03.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.242978572845459,
+    "error": null,
+    "file_size": 316,
+    "test_time": "2025-03-19T11:25:52.348601"
+  },
+  {
+    "voice": "female_03.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.6882901191711426,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:25:53.591580"
+  },
+  {
+    "voice": "female_03.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 9.298746109008789,
+    "error": null,
+    "file_size": 325,
+    "test_time": "2025-03-19T11:25:56.279870"
+  },
+  {
+    "voice": "female_04.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.38785529136657715,
+    "error": null,
+    "file_size": 313,
+    "test_time": "2025-03-19T11:26:05.578616"
+  },
+  {
+    "voice": "female_04.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.4281666278839111,
+    "error": null,
+    "file_size": 316,
+    "test_time": "2025-03-19T11:26:05.966471"
+  },
+  {
+    "voice": "female_04.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.798635244369507,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:26:07.394638"
+  },
+  {
+    "voice": "female_04.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 9.217761039733887,
+    "error": null,
+    "file_size": 325,
+    "test_time": "2025-03-19T11:26:10.193273"
+  },
+  {
+    "voice": "female_05.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.3820514678955078,
+    "error": null,
+    "file_size": 313,
+    "test_time": "2025-03-19T11:26:19.412033"
+  },
+  {
+    "voice": "female_05.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.2153770923614502,
+    "error": null,
+    "file_size": 316,
+    "test_time": "2025-03-19T11:26:19.794085"
+  },
+  {
+    "voice": "female_05.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.793776512145996,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:26:21.009462"
+  },
+  {
+    "voice": "female_05.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 8.472212314605713,
+    "error": null,
+    "file_size": 325,
+    "test_time": "2025-03-19T11:26:23.803239"
+  },
+  {
+    "voice": "female_06.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.4326975345611572,
+    "error": null,
+    "file_size": 313,
+    "test_time": "2025-03-19T11:26:32.275451"
+  },
+  {
+    "voice": "female_06.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.4130394458770752,
+    "error": null,
+    "file_size": 316,
+    "test_time": "2025-03-19T11:26:32.709149"
+  },
+  {
+    "voice": "female_06.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 1.8006703853607178,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:26:34.123191"
+  },
+  {
+    "voice": "female_06.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 7.735085964202881,
+    "error": null,
+    "file_size": 325,
+    "test_time": "2025-03-19T11:26:35.924864"
+  },
+  {
+    "voice": "female_07.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.34261417388916016,
+    "error": null,
+    "file_size": 313,
+    "test_time": "2025-03-19T11:26:43.659950"
+  },
+  {
+    "voice": "female_07.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.2474844455718994,
+    "error": null,
+    "file_size": 316,
+    "test_time": "2025-03-19T11:26:44.002564"
+  },
+  {
+    "voice": "female_07.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.3854522705078125,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:26:45.250049"
+  },
+  {
+    "voice": "female_07.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 7.924210786819458,
+    "error": null,
+    "file_size": 325,
+    "test_time": "2025-03-19T11:26:47.635501"
+  },
+  {
+    "voice": "male_01.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.3025705814361572,
+    "error": null,
+    "file_size": 307,
+    "test_time": "2025-03-19T11:26:55.560715"
+  },
+  {
+    "voice": "male_01.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.1355516910552979,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:26:55.864227"
+  },
+  {
+    "voice": "male_01.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.4828343391418457,
+    "error": null,
+    "file_size": 304,
+    "test_time": "2025-03-19T11:26:56.999779"
+  },
+  {
+    "voice": "male_01.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 7.748300552368164,
+    "error": null,
+    "file_size": 319,
+    "test_time": "2025-03-19T11:26:59.482613"
+  },
+  {
+    "voice": "male_02.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.44594264030456543,
+    "error": null,
+    "file_size": 307,
+    "test_time": "2025-03-19T11:27:07.231913"
+  },
+  {
+    "voice": "male_02.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.1222693920135498,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:27:07.677856"
+  },
+  {
+    "voice": "male_02.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.8921406269073486,
+    "error": null,
+    "file_size": 304,
+    "test_time": "2025-03-19T11:27:08.800125"
+  },
+  {
+    "voice": "male_02.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 8.798806190490723,
+    "error": null,
+    "file_size": 319,
+    "test_time": "2025-03-19T11:27:11.694270"
+  },
+  {
+    "voice": "male_03.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.3701648712158203,
+    "error": null,
+    "file_size": 307,
+    "test_time": "2025-03-19T11:27:20.494028"
+  },
+  {
+    "voice": "male_03.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.218719720840454,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:27:20.864193"
+  },
+  {
+    "voice": "male_03.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.896324396133423,
+    "error": null,
+    "file_size": 304,
+    "test_time": "2025-03-19T11:27:22.082913"
+  },
+  {
+    "voice": "male_03.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 8.396540880203247,
+    "error": null,
+    "file_size": 319,
+    "test_time": "2025-03-19T11:27:24.980251"
+  },
+  {
+    "voice": "male_04.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.3547201156616211,
+    "error": null,
+    "file_size": 307,
+    "test_time": "2025-03-19T11:27:33.378383"
+  },
+  {
+    "voice": "male_04.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.4316420555114746,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:27:33.733103"
+  },
+  {
+    "voice": "male_04.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 3.3922553062438965,
+    "error": null,
+    "file_size": 304,
+    "test_time": "2025-03-19T11:27:35.165751"
+  },
+  {
+    "voice": "male_04.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 10.445425033569336,
+    "error": null,
+    "file_size": 319,
+    "test_time": "2025-03-19T11:27:38.558513"
+  },
+  {
+    "voice": "male_05.wav",
+    "text_name": "short",
+    "text_length": 25,
+    "success": true,
+    "time_taken": 0.407778263092041,
+    "error": null,
+    "file_size": 307,
+    "test_time": "2025-03-19T11:27:49.003938"
+  },
+  {
+    "voice": "male_05.wav",
+    "text_name": "medium",
+    "text_length": 137,
+    "success": true,
+    "time_taken": 1.189664602279663,
+    "error": null,
+    "file_size": 310,
+    "test_time": "2025-03-19T11:27:49.413714"
+  },
+  {
+    "voice": "male_05.wav",
+    "text_name": "long",
+    "text_length": 287,
+    "success": true,
+    "time_taken": 2.5228006839752197,
+    "error": null,
+    "file_size": 304,
+    "test_time": "2025-03-19T11:27:50.603379"
+  },
+  {
+    "voice": "male_05.wav",
+    "text_name": "very_long",
+    "text_length": 890,
+    "success": true,
+    "time_taken": 8.805478572845459,
+    "error": null,
+    "file_size": 319,
+    "test_time": "2025-03-19T11:27:53.126180"
+  }
+]

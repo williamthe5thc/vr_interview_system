@@ -1,0 +1,441 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AllTalk Voice Benchmark Results</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+        }
+        .recommendations {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #2196F3;
+        }
+        .success {
+            color: #28a745;
+        }
+        .warning {
+            color: #ffc107;
+        }
+        .danger {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <h1>AllTalk Voice Benchmark Results</h1>
+    <p>Generated on: 2025-03-19 11:28:01</p>
+    
+    <div class="card">
+        <h2>Recommended Timeout Settings</h2>
+        <div class="recommendations">
+            <p><strong>timeout:</strong> 30 seconds</p>
+            <p><strong>direct_api_timeout:</strong> 60 seconds</p>
+        </div>
+        <p>These settings include safety margins to handle the majority of voice generation requests.</p>
+    </div>
+    
+    <div class="card">
+        <h2>Performance by Voice</h2>
+        <div class="chart-container">
+            <canvas id="voiceComparisonChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>Text Length Impact</h2>
+        <div class="chart-container">
+            <canvas id="textLengthChart"></canvas>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h2>Detailed Results</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Voice</th>
+                    <th>Short (s)</th>
+                    <th>Medium (s)</th>
+                    <th>Long (s)</th>
+                    <th>Very Long (s)</th>
+                    <th>Success Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr>
+                    <td>female_06.wav</td>
+                    <td>0.43</td>
+                    <td>1.41</td>
+                    <td>1.80</td>
+                    <td>7.74</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>male_01.wav</td>
+                    <td>0.30</td>
+                    <td>1.14</td>
+                    <td>2.48</td>
+                    <td>7.75</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>female_01.wav</td>
+                    <td>0.35</td>
+                    <td>1.22</td>
+                    <td>2.31</td>
+                    <td>7.81</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>female_07.wav</td>
+                    <td>0.34</td>
+                    <td>1.25</td>
+                    <td>2.39</td>
+                    <td>7.92</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>male_03.wav</td>
+                    <td>0.37</td>
+                    <td>1.22</td>
+                    <td>2.90</td>
+                    <td>8.40</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>female_05.wav</td>
+                    <td>0.38</td>
+                    <td>1.22</td>
+                    <td>2.79</td>
+                    <td>8.47</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>male_02.wav</td>
+                    <td>0.45</td>
+                    <td>1.12</td>
+                    <td>2.89</td>
+                    <td>8.80</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>male_05.wav</td>
+                    <td>0.41</td>
+                    <td>1.19</td>
+                    <td>2.52</td>
+                    <td>8.81</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>Jordan.wav</td>
+                    <td>0.46</td>
+                    <td>1.14</td>
+                    <td>3.34</td>
+                    <td>8.89</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>female_04.wav</td>
+                    <td>0.39</td>
+                    <td>1.43</td>
+                    <td>2.80</td>
+                    <td>9.22</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>female_02.wav</td>
+                    <td>0.67</td>
+                    <td>1.30</td>
+                    <td>2.73</td>
+                    <td>9.25</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>female_03.wav</td>
+                    <td>0.49</td>
+                    <td>1.24</td>
+                    <td>2.69</td>
+                    <td>9.30</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>Clint_Eastwood CC3.wav</td>
+                    <td>0.52</td>
+                    <td>1.44</td>
+                    <td>2.59</td>
+                    <td>9.32</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>Sophie_Anderson CC3.wav</td>
+                    <td>0.50</td>
+                    <td>1.51</td>
+                    <td>2.90</td>
+                    <td>9.42</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>Morgan_Freeman CC3.wav</td>
+                    <td>0.68</td>
+                    <td>1.50</td>
+                    <td>4.94</td>
+                    <td>9.97</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>James_Earl_Jones CC3.wav</td>
+                    <td>0.50</td>
+                    <td>1.38</td>
+                    <td>2.86</td>
+                    <td>10.18</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>male_04.wav</td>
+                    <td>0.35</td>
+                    <td>1.43</td>
+                    <td>3.39</td>
+                    <td>10.45</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>Arnold.wav</td>
+                    <td>1.39</td>
+                    <td>1.59</td>
+                    <td>2.65</td>
+                    <td>10.73</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>David_Attenborough CC3.wav</td>
+                    <td>0.43</td>
+                    <td>1.59</td>
+                    <td>3.58</td>
+                    <td>11.05</td>
+                    <td class="success">100.0%</td>
+                </tr>
+                <tr>
+                    <td>Clint_Eastwood CC3 (enhanced).wav</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td class="danger">0.0%</td>
+                </tr>
+                <tr>
+                    <td>Jordan (2).wav</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td>N/A</td>
+                    <td class="danger">0.0%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="card">
+        <h2>Summary Statistics</h2>
+        <ul>
+            <li><strong>Successful Voices:</strong> 19 of 21</li>
+            <li><strong>Overall Success Rate:</strong> 90.5%</li>
+        </ul>
+    </div>
+    
+    <script>
+        // Prepare data for the charts
+        const voiceStats = {"Arnold.wav": {"short": 1.389822006225586, "medium": 1.5861663818359375, "long": 2.651794195175171, "very_long": 10.726810216903687, "success_rate": 100.0, "total_tests": 4}, "Clint_Eastwood CC3 (enhanced).wav": {"short": null, "medium": null, "long": null, "very_long": null, "success_rate": 0.0, "total_tests": 4}, "Clint_Eastwood CC3.wav": {"short": 0.5235452651977539, "medium": 1.4377901554107666, "long": 2.588099956512451, "very_long": 9.317229509353638, "success_rate": 100.0, "total_tests": 4}, "David_Attenborough CC3.wav": {"short": 0.42893123626708984, "medium": 1.5871570110321045, "long": 3.576768636703491, "very_long": 11.050905704498291, "success_rate": 100.0, "total_tests": 4}, "James_Earl_Jones CC3.wav": {"short": 0.49743127822875977, "medium": 1.3805761337280273, "long": 2.859583616256714, "very_long": 10.183524131774902, "success_rate": 100.0, "total_tests": 4}, "Jordan (2).wav": {"short": null, "medium": null, "long": null, "very_long": null, "success_rate": 0.0, "total_tests": 4}, "Jordan.wav": {"short": 0.4649636745452881, "medium": 1.1384520530700684, "long": 3.3372933864593506, "very_long": 8.891645669937134, "success_rate": 100.0, "total_tests": 4}, "Morgan_Freeman CC3.wav": {"short": 0.6804530620574951, "medium": 1.4974031448364258, "long": 4.938249588012695, "very_long": 9.966198921203613, "success_rate": 100.0, "total_tests": 4}, "Sophie_Anderson CC3.wav": {"short": 0.4990081787109375, "medium": 1.5111174583435059, "long": 2.9011452198028564, "very_long": 9.416214942932129, "success_rate": 100.0, "total_tests": 4}, "female_01.wav": {"short": 0.3537881374359131, "medium": 1.2234649658203125, "long": 2.3070008754730225, "very_long": 7.807597398757935, "success_rate": 100.0, "total_tests": 4}, "female_02.wav": {"short": 0.6683595180511475, "medium": 1.298856496810913, "long": 2.7321817874908447, "very_long": 9.246251821517944, "success_rate": 100.0, "total_tests": 4}, "female_03.wav": {"short": 0.4945719242095947, "medium": 1.242978572845459, "long": 2.6882901191711426, "very_long": 9.298746109008789, "success_rate": 100.0, "total_tests": 4}, "female_04.wav": {"short": 0.38785529136657715, "medium": 1.4281666278839111, "long": 2.798635244369507, "very_long": 9.217761039733887, "success_rate": 100.0, "total_tests": 4}, "female_05.wav": {"short": 0.3820514678955078, "medium": 1.2153770923614502, "long": 2.793776512145996, "very_long": 8.472212314605713, "success_rate": 100.0, "total_tests": 4}, "female_06.wav": {"short": 0.4326975345611572, "medium": 1.4130394458770752, "long": 1.8006703853607178, "very_long": 7.735085964202881, "success_rate": 100.0, "total_tests": 4}, "female_07.wav": {"short": 0.34261417388916016, "medium": 1.2474844455718994, "long": 2.3854522705078125, "very_long": 7.924210786819458, "success_rate": 100.0, "total_tests": 4}, "male_01.wav": {"short": 0.3025705814361572, "medium": 1.1355516910552979, "long": 2.4828343391418457, "very_long": 7.748300552368164, "success_rate": 100.0, "total_tests": 4}, "male_02.wav": {"short": 0.44594264030456543, "medium": 1.1222693920135498, "long": 2.8921406269073486, "very_long": 8.798806190490723, "success_rate": 100.0, "total_tests": 4}, "male_03.wav": {"short": 0.3701648712158203, "medium": 1.218719720840454, "long": 2.896324396133423, "very_long": 8.396540880203247, "success_rate": 100.0, "total_tests": 4}, "male_04.wav": {"short": 0.3547201156616211, "medium": 1.4316420555114746, "long": 3.3922553062438965, "very_long": 10.445425033569336, "success_rate": 100.0, "total_tests": 4}, "male_05.wav": {"short": 0.407778263092041, "medium": 1.189664602279663, "long": 2.5228006839752197, "very_long": 8.805478572845459, "success_rate": 100.0, "total_tests": 4}};
+        
+        // Voice comparison chart
+        const voiceCtx = document.getElementById('voiceComparisonChart').getContext('2d');
+        const voiceLabels = Object.keys(voiceStats);
+        const shortData = [];
+        const mediumData = [];
+        const longData = [];
+        const veryLongData = [];
+        
+        for (const voice in voiceStats) {
+            shortData.push(voiceStats[voice].short);
+            mediumData.push(voiceStats[voice].medium);
+            longData.push(voiceStats[voice].long);
+            veryLongData.push(voiceStats[voice].very_long);
+        }
+        
+        new Chart(voiceCtx, {
+            type: 'bar',
+            data: {
+                labels: voiceLabels,
+                datasets: [
+                    {
+                        label: 'Short Text',
+                        data: shortData,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Medium Text',
+                        data: mediumData,
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Long Text',
+                        data: longData,
+                        backgroundColor: 'rgba(255, 159, 64, 0.5)',
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Very Long Text',
+                        data: veryLongData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Processing Time (seconds)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Voice'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Text length impact chart
+        const textCtx = document.getElementById('textLengthChart').getContext('2d');
+        
+        // Calculate averages by text length
+        const textLengths = ['short', 'medium', 'long', 'very_long'];
+        const textLengthLabels = ['Short', 'Medium', 'Long', 'Very Long'];
+        const avgTimes = [];
+        const successRates = [];
+        
+        for (const length of textLengths) {
+            let sum = 0;
+            let count = 0;
+            let successes = 0;
+            
+            for (const voice in voiceStats) {
+                if (voiceStats[voice][length] !== null) {
+                    sum += voiceStats[voice][length];
+                    count++;
+                    successes++;
+                }
+            }
+            
+            avgTimes.push(count > 0 ? sum / count : null);
+            successRates.push(voiceLabels.length > 0 ? (successes / voiceLabels.length) * 100 : 0);
+        }
+        
+        new Chart(textCtx, {
+            type: 'bar',
+            data: {
+                labels: textLengthLabels,
+                datasets: [
+                    {
+                        label: 'Average Processing Time (seconds)',
+                        data: avgTimes,
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Success Rate (%)',
+                        data: successRates,
+                        backgroundColor: 'rgba(75, 192, 192, 0.5)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        type: 'line',
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Avg. Processing Time (seconds)'
+                        }
+                    },
+                    y1: {
+                        beginAtZero: true,
+                        max: 100,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Success Rate (%)'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
