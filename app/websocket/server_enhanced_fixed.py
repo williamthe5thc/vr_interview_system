@@ -416,7 +416,7 @@ class WebSocketServer:
     async def process_audio_pipeline(self, session_id: str, audio_data: bytes):
         """
         Full audio processing pipeline - runs asynchronously to avoid blocking the WebSocket.
-        This improved version ensures better progress updates and task separation.
+        This improved version uses granular processing states for better progress tracking.
         """
         websocket = self.active_connections.get(session_id)
         progress_task = None
@@ -444,9 +444,10 @@ class WebSocketServer:
                 self._safety_timeout(session_id, 25.0)  # 25 second timeout
             )
             
-            # Transition to PROCESSING
-            await self.state_manager.transition_state(session_id, "PROCESSING", {
-                "message": "Transcribing audio"
+            # Transition to PROCESSING_STT (new granular state)
+            await self.state_manager.transition_state(session_id, "PROCESSING_STT", {
+                "message": "Transcribing your speech to text",
+                "progress": 0.0
             })
             
             # Transcribe audio (CPU intensive) in a separate thread
@@ -457,6 +458,12 @@ class WebSocketServer:
                 
                 # Add a timeout to prevent hanging
                 transcript = await asyncio.wait_for(transcript_future, timeout=15.0)
+                
+                # Update STT progress to complete
+                await self.state_manager.transition_state(session_id, "PROCESSING_STT", {
+                    "message": "Speech transcribed successfully",
+                    "progress": 1.0
+                })
             except asyncio.TimeoutError:
                 # Handle STT timeout specifically
                 self.logger.warning(f"STT timeout for session {session_id}")
@@ -468,12 +475,24 @@ class WebSocketServer:
                         {"websocket": websocket}
                     )
                 
+                # Transition to ERROR state
+                await self.state_manager.transition_state(session_id, "ERROR", {
+                    "message": "Speech transcription timed out",
+                    "error_type": "STT_ERROR"
+                })
+                
                 # Cancel safety timer
                 if safety_timer and not safety_timer.done():
                     safety_timer.cancel()
                 
                 return
             except Exception as stt_error:
+                # Transition to ERROR state
+                await self.state_manager.transition_state(session_id, "ERROR", {
+                    "message": f"Speech transcription error: {str(stt_error)}",
+                    "error_type": "STT_ERROR"
+                })
+                
                 if self.error_handler:
                     # Handle STT errors with error handler
                     success, _ = await self.error_handler.handle_error(
@@ -534,11 +553,12 @@ class WebSocketServer:
                 elif len(context) > 10:
                     interaction_stage = "wrap_up"
             
-            # Update state with transcription and stage info
-            await self.state_manager.transition_state(session_id, "PROCESSING", {
-                "message": "Generating response",
+            # Transition to PROCESSING_LLM (new granular state)
+            await self.state_manager.transition_state(session_id, "PROCESSING_LLM", {
+                "message": "Generating response to your question",
                 "transcript": transcript,
-                "stage": interaction_stage
+                "stage": interaction_stage,
+                "progress": 0.0
             })
             
             # Cancel previous heartbeat task if it exists
@@ -579,9 +599,22 @@ class WebSocketServer:
                 
                 # Add a timeout for LLM processing
                 response = await asyncio.wait_for(llm_future, timeout=20.0)
+                
+                # Update LLM progress to complete
+                await self.state_manager.transition_state(session_id, "PROCESSING_LLM", {
+                    "message": "Response generated successfully",
+                    "progress": 1.0
+                })
             except asyncio.TimeoutError:
                 # Handle LLM timeout
                 self.logger.warning(f"LLM timeout for session {session_id}")
+                
+                # Transition to ERROR state
+                await self.state_manager.transition_state(session_id, "ERROR", {
+                    "message": "LLM response generation timed out, but still working in background",
+                    "error_type": "LLM_TIMEOUT"
+                })
+                
                 if self.error_handler:
                     await self.error_handler.handle_error(
                         ErrorHandler.LLM_ERROR,
@@ -597,6 +630,12 @@ class WebSocketServer:
                     safety_timer.cancel()
                 return
             except Exception as llm_error:
+                # Transition to ERROR state
+                await self.state_manager.transition_state(session_id, "ERROR", {
+                    "message": f"LLM response generation error: {str(llm_error)}",
+                    "error_type": "LLM_ERROR"
+                })
+                
                 # Cancel heartbeat task
                 if heartbeat_task and not heartbeat_task.done():
                     heartbeat_task.cancel()
@@ -634,9 +673,10 @@ class WebSocketServer:
             
             self.logger.info(f"LLM Response: {response}")
             
-            # Update state for speech synthesis
-            await self.state_manager.transition_state(session_id, "PROCESSING", {
-                "message": "Converting response to speech"
+            # Transition to PROCESSING_TTS (new granular state)
+            await self.state_manager.transition_state(session_id, "PROCESSING_TTS", {
+                "message": "Converting response to speech",
+                "progress": 0.0
             })
             
             # Start a new heartbeat for TTS processing
@@ -663,8 +703,20 @@ class WebSocketServer:
                 
                 # Add a timeout for TTS processing but let the task continue
                 audio_response = await asyncio.wait_for(tts_future, timeout=15.0)  # Increased timeout
+                
+                # Update TTS progress to complete
+                await self.state_manager.transition_state(session_id, "PROCESSING_TTS", {
+                    "message": "Audio generation complete",
+                    "progress": 1.0
+                })
             except asyncio.TimeoutError:
                 self.logger.warning(f"TTS timeout for session {session_id}")
+                
+                # Transition to ERROR state
+                await self.state_manager.transition_state(session_id, "ERROR", {
+                    "message": "Audio generation timed out",
+                    "error_type": "TTS_TIMEOUT"
+                })
                 
                 # Don't cancel the TTS future - let it continue in the background
                 # Instead, keep a reference to it for later retrieval
@@ -692,6 +744,12 @@ class WebSocketServer:
                 # Don't return yet - let the server transition to WAITING state normally
                 audio_response = None
             except Exception as tts_error:
+                # Transition to ERROR state
+                await self.state_manager.transition_state(session_id, "ERROR", {
+                    "message": f"Audio generation error: {str(tts_error)}",
+                    "error_type": "TTS_ERROR"
+                })
+                
                 if self.error_handler:
                     # Handle TTS errors with error handler
                     success, _ = await self.error_handler.handle_error(
@@ -765,6 +823,12 @@ class WebSocketServer:
                     task.cancel()
             
             self.logger.error(f"Error in audio pipeline: {e}\n{traceback.format_exc()}")
+            
+            # Transition to ERROR state
+            await self.state_manager.transition_state(session_id, "ERROR", {
+                "message": f"System error: {str(e)}",
+                "error_type": "SYSTEM_ERROR"
+            })
             
             # Try to use error handler
             if self.error_handler:

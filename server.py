@@ -41,12 +41,11 @@ from app.websocket.server_enhanced_fixed import WebSocketServer
 from app.state.manager import StateManager
 from services.audio.stt_wrapper import STTService  # Fixed import
 from services.audio.tts import TTSService
-from services.llm.Ollama_client import OllamaClient
+from services.llm.ollama_client import OllamaClient
 from app.utils.logging import setup_logging
 from app.utils.config import load_config
 from app.utils.error_handler import ErrorHandler
 from app.utils.heartbeat import HeartbeatService
-
 
 class EnhancedServer:
     """

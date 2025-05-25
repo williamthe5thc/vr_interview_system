@@ -75,6 +75,12 @@ class EnhancedStreamProcessor:
                 "message": "Receiving audio"
             })
             
+            # Transition to PROCESSING_STT state
+            await self.state_manager.transition_state(session_id, "PROCESSING_STT", {
+                "message": "Transcribing your speech to text",
+                "progress": 0.0
+            })
+            
             # Transcribe audio (CPU intensive) in a separate thread
             try:
                 transcript_future = asyncio.create_task(
@@ -88,6 +94,12 @@ class EnhancedStreamProcessor:
                 # Remove completed task
                 if transcript_future in tasks:
                     tasks.remove(transcript_future)
+                    
+                # Send progress update for completed transcription
+                await self.state_manager.transition_state(session_id, "PROCESSING_STT", {
+                    "message": "Speech transcribed successfully",
+                    "progress": 1.0
+                })
             except asyncio.TimeoutError:
                 self.logger.warning(f"STT timeout for session {session_id}")
                 if self.error_handler:
@@ -95,6 +107,26 @@ class EnhancedStreamProcessor:
                         "STT_ERROR",
                         session_id,
                         Exception("Speech transcription timed out"),
+                        {"websocket": websocket}
+                    )
+                # Transition to ERROR state
+                await self.state_manager.transition_state(session_id, "ERROR", {
+                    "message": "Speech transcription timed out",
+                    "error_type": "STT_ERROR"
+                })
+                return
+            except Exception as e:
+                self.logger.error(f"STT error: {e}")
+                # Transition to ERROR state
+                await self.state_manager.transition_state(session_id, "ERROR", {
+                    "message": f"Speech transcription error: {str(e)}",
+                    "error_type": "STT_ERROR"
+                })
+                if self.error_handler:
+                    await self.error_handler.handle_error(
+                        "STT_ERROR",
+                        session_id,
+                        e,
                         {"websocket": websocket}
                     )
                 return
@@ -108,9 +140,10 @@ class EnhancedStreamProcessor:
                 return
             
             # 2. Update state and prepare for LLM processing
-            await self.state_manager.transition_state(session_id, "PROCESSING", {
-                "message": "Generating response",
-                "transcript": transcript
+            await self.state_manager.transition_state(session_id, "PROCESSING_LLM", {
+                "message": "Generating response to your question",
+                "transcript": transcript,
+                "progress": 0.0
             })
             
             # Get session context
@@ -149,7 +182,22 @@ class EnhancedStreamProcessor:
             
             # 4. Generate LLM response with progress updates and timeout
             try:
-                progress_callback = lambda msg: self._send_progress_update(websocket, msg)
+                # Create progress callback that will update the state
+                async def progress_callback(msg, progress=None):
+                    # Update state with progress information
+                    progress_metadata = {
+                        "message": msg
+                    }
+                    
+                    # Add progress value if provided
+                    if progress is not None:
+                        progress_metadata["progress"] = progress
+                        
+                    await self.state_manager.transition_state(session_id, "PROCESSING_LLM", 
+                                                             progress_metadata)
+                    
+                    # Also send direct progress update
+                    await self._send_progress_update(websocket, msg)
                 
                 llm_future = asyncio.create_task(
                     self.llm_client.generate_response_async(
@@ -170,6 +218,12 @@ class EnhancedStreamProcessor:
                 if llm_future in tasks:
                     tasks.remove(llm_future)
                     
+                # Send final LLM progress update
+                await self.state_manager.transition_state(session_id, "PROCESSING_LLM", {
+                    "message": "Response generated successfully",
+                    "progress": 1.0
+                })
+                
                 # Cancel heartbeat task once we have the response
                 if heartbeat_task and not heartbeat_task.done():
                     heartbeat_task.cancel()
@@ -192,6 +246,12 @@ class EnhancedStreamProcessor:
                     "message": "I'm still thinking about your question. This might take a moment..."
                 }))
                 
+                # Transition to ERROR state
+                await self.state_manager.transition_state(session_id, "ERROR", {
+                    "message": "LLM response generation timed out, but still working in background",
+                    "error_type": "LLM_TIMEOUT"
+                })
+                
                 # Let the error handler know too
                 if self.error_handler:
                     await self.error_handler.handle_error(
@@ -201,13 +261,29 @@ class EnhancedStreamProcessor:
                         {"websocket": websocket, "transcript": transcript}
                     )
                 return
+            except Exception as e:
+                self.logger.error(f"LLM error: {e}")
+                # Transition to ERROR state
+                await self.state_manager.transition_state(session_id, "ERROR", {
+                    "message": f"LLM response generation error: {str(e)}",
+                    "error_type": "LLM_ERROR"
+                })
+                if self.error_handler:
+                    await self.error_handler.handle_error(
+                        "LLM_ERROR",
+                        session_id,
+                        e,
+                        {"websocket": websocket, "transcript": transcript}
+                    )
+                return
             
             # Add the exchange to session history
             session.add_interaction(transcript, response)
             
-            # 5. Generate speech using direct API
-            await self.state_manager.transition_state(session_id, "PROCESSING", {
-                "message": "Converting response to speech"
+            # 5. Generate speech using TTS
+            await self.state_manager.transition_state(session_id, "PROCESSING_TTS", {
+                "message": "Converting response to speech",
+                "progress": 0.0
             })
             
             # Use direct TTS processing
@@ -238,6 +314,12 @@ class EnhancedStreamProcessor:
                 if not task.done():
                     task.cancel()
                     
+            # Transition to ERROR state
+            await self.state_manager.transition_state(session_id, "ERROR", {
+                "message": f"System error: {str(e)}",
+                "error_type": "SYSTEM_ERROR"
+            })
+            
             # Try to use error handler
             if self.error_handler:
                 await self.error_handler.handle_error(
@@ -255,8 +337,6 @@ class EnhancedStreamProcessor:
             except Exception:
                 pass
     
-    # Streaming TTS methods removed - using only direct API
-    
     async def _generate_standard_tts(self, session_id: str, text: str, websocket) -> None:
         """
         Generate TTS response using standard (non-streaming) approach.
@@ -267,6 +347,12 @@ class EnhancedStreamProcessor:
             websocket: WebSocket connection
         """
         try:
+            # Update TTS progress
+            await self.state_manager.transition_state(session_id, "PROCESSING_TTS", {
+                "message": "Generating audio from text",
+                "progress": 0.5
+            })
+            
             # Generate speech with timeout (increased from 8 to 15 seconds)
             tts_future = asyncio.create_task(
                 asyncio.to_thread(self.tts_service.synthesize, text)
@@ -274,6 +360,12 @@ class EnhancedStreamProcessor:
             
             # Add timeout to prevent hanging
             audio_response = await asyncio.wait_for(tts_future, timeout=15.0)
+            
+            # Update TTS progress to complete
+            await self.state_manager.transition_state(session_id, "PROCESSING_TTS", {
+                "message": "Audio generation complete",
+                "progress": 1.0
+            })
             
             # Transition to RESPONDING state
             await self.state_manager.transition_state(session_id, "RESPONDING", {
@@ -303,6 +395,12 @@ class EnhancedStreamProcessor:
         except asyncio.TimeoutError:
             self.logger.warning(f"TTS timeout for session {session_id}")
             
+            # Transition to ERROR state
+            await self.state_manager.transition_state(session_id, "ERROR", {
+                "message": "Audio generation timed out",
+                "error_type": "TTS_TIMEOUT"
+            })
+            
             # Send text-only response as fallback
             fallback_message = {
                 "type": "text_response",
@@ -324,6 +422,12 @@ class EnhancedStreamProcessor:
                 
         except Exception as e:
             self.logger.error(f"Error in standard TTS: {e}")
+            
+            # Transition to ERROR state
+            await self.state_manager.transition_state(session_id, "ERROR", {
+                "message": f"Audio generation error: {str(e)}",
+                "error_type": "TTS_ERROR"
+            })
             
             # Try to send text-only response
             try:
@@ -397,6 +501,12 @@ class EnhancedStreamProcessor:
             
             # Generate TTS for the delayed response
             try:
+                # Transition to PROCESSING_TTS state for delayed response
+                await self.state_manager.transition_state(session_id, "PROCESSING_TTS", {
+                    "message": "Converting delayed response to speech",
+                    "delayed": True
+                })
+                
                 audio_response = await asyncio.to_thread(
                     self.tts_service.synthesize, response, session_id
                 )
@@ -406,7 +516,8 @@ class EnhancedStreamProcessor:
                 if current_state in ["WAITING", "IDLE"]:
                     # Update state to RESPONDING
                     await self.state_manager.transition_state(session_id, "RESPONDING", {
-                        "message": "Playing delayed response"
+                        "message": "Playing delayed response",
+                        "delayed": True
                     })
                     
                     # Send direct audio
@@ -414,7 +525,8 @@ class EnhancedStreamProcessor:
                         "type": "audio_response",
                         "session_id": session_id,
                         "timestamp": time.time(),
-                        "audio_data": base64.b64encode(audio_response).decode('utf-8'),
+                        "format": "wav",
+                        "data": base64.b64encode(audio_response).decode('utf-8'),
                         "text": response,
                         "delayed": True
                     }))
@@ -426,8 +538,30 @@ class EnhancedStreamProcessor:
             except Exception as e:
                 self.logger.error(f"Error processing delayed TTS: {e}")
                 
+                # Transition to ERROR state for TTS failure
+                await self.state_manager.transition_state(session_id, "ERROR", {
+                    "message": f"Delayed audio generation error: {str(e)}",
+                    "error_type": "DELAYED_TTS_ERROR"
+                })
+                
+                # Try to return to WAITING state
+                await self.state_manager.transition_state(session_id, "WAITING", {
+                    "message": "Waiting for user input after error"
+                })
+                
         except Exception as e:
             self.logger.error(f"Error handling delayed LLM response: {e}")
+            
+            # Transition to ERROR state
+            await self.state_manager.transition_state(session_id, "ERROR", {
+                "message": f"Error processing delayed response: {str(e)}",
+                "error_type": "DELAYED_LLM_ERROR"
+            })
+            
+            # Try to return to WAITING state
+            await self.state_manager.transition_state(session_id, "WAITING", {
+                "message": "Waiting for user input after error"
+            })
     
     async def _send_progress_update(self, websocket, message: str) -> None:
         """
@@ -464,13 +598,22 @@ class EnhancedStreamProcessor:
             "Finalizing my thoughts on this..."
         ]
         
+        progress_values = [0.2, 0.4, 0.6, 0.8, 0.9]
+        
         try:
             # Send updates every 5 seconds
             for i in range(len(update_messages)):
                 await asyncio.sleep(5.0)
                 
-                # Send a system message
+                # Update the LLM processing state with progress
+                await self.state_manager.transition_state(session_id, "PROCESSING_LLM", {
+                    "message": update_messages[i % len(update_messages)],
+                    "progress": progress_values[i % len(progress_values)]
+                })
+                
+                # Also send a direct system message
                 await self._send_progress_update(websocket, update_messages[i % len(update_messages)])
+                
         except asyncio.CancelledError:
             # Task was cancelled (normal when LLM completes)
             pass

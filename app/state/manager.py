@@ -9,7 +9,11 @@ class States(Enum):
     """Enumeration of possible states for the conversation"""
     IDLE = auto()
     LISTENING = auto()
-    PROCESSING = auto()
+    # Granular processing states
+    PROCESSING = auto()          # Generic processing state (for backward compatibility)
+    PROCESSING_STT = auto()      # Specifically transcribing speech to text
+    PROCESSING_LLM = auto()      # Generating response with the language model 
+    PROCESSING_TTS = auto()      # Converting text response to audio
     RESPONDING = auto()
     WAITING = auto()
     ERROR = auto()
@@ -20,7 +24,7 @@ class StateManager:
     Manages the state machine for conversation sessions.
     
     This class handles state transitions and ensures they follow the defined flow:
-    IDLE → LISTENING → PROCESSING → RESPONDING → WAITING → (repeat)
+    IDLE → LISTENING → PROCESSING_STT → PROCESSING_LLM → PROCESSING_TTS → RESPONDING → WAITING → (repeat)
     
     It also handles broadcasting state changes to connected clients.
     """
@@ -129,7 +133,7 @@ class StateManager:
             session_id: The session to update
             new_state: The new state to transition to
             metadata: Optional metadata for the state update
-            timeout: Maximum time to wait for lock acquisition (reduced from 3.0 to 2.0)
+            timeout: Maximum time to wait for lock acquisition
         
         Returns:
             True if the transition was successful, False otherwise
@@ -155,7 +159,7 @@ class StateManager:
                 # Use wait_for with a timeout to avoid deadlocks
                 await asyncio.wait_for(
                     self._state_locks[session_id].acquire(),
-                    timeout=timeout  # Increased from 2.0 to 5.0 seconds
+                    timeout=timeout
                 )
                 lock_acquired = True
             except asyncio.TimeoutError:
@@ -175,25 +179,26 @@ class StateManager:
                     
                 previous_state = session.state
                 
-                # More aggressive redundant update detection for PROCESSING state
+                # Detect redundant processing state updates
                 if previous_state == new_state:
-                    # For PROCESSING state, limit updates to be less frequent
-                    if new_state == "PROCESSING":
-                        # Store timestamps for PROCESSING state updates
-                        last_update_time = getattr(session, "last_processing_update", 0)
+                    # For processing states, limit updates to be less frequent
+                    if new_state.startswith("PROCESSING"):
+                        # Track updates per processing type to avoid redundancy
+                        last_update_key = f"last_{new_state.lower()}_update"
+                        last_update_time = getattr(session, last_update_key, 0)
                         current_time = time.time()
                         
                         # Only allow updates every 3 seconds unless they contain progress info
                         if (current_time - last_update_time < 3.0 and 
                             (not metadata or "progress" not in metadata)):
                             self.logger.debug(
-                                f"Limiting PROCESSING state updates for {session_id}, "
+                                f"Limiting {new_state} state updates for {session_id}, "
                                 f"last update was {current_time - last_update_time:.1f}s ago"
                             )
                             return True
                         
                         # Update the last processing update time
-                        setattr(session, "last_processing_update", current_time)
+                        setattr(session, last_update_key, current_time)
                     # For other states, check if metadata has meaningful changes
                     elif metadata and "progress" not in metadata:
                         # For progress updates, we still want to show them
@@ -246,28 +251,38 @@ class StateManager:
             self.logger.error(f"Error during state transition: {e}")
             return False
     
-    # Update valid transitions to be more permissive
+    # Updated valid transitions to handle new granular processing states
     def _is_valid_transition(self, current, next_state):
         """
         Validate that a state transition follows the allowed flow.
         
         Modified with more flexible transitions to prevent deadlocks:
+        - Any state can transition to ERROR state
         - Any state can transition to WAITING (helps recover from errors)
-        - PROCESSING can go to any state (helps with LLM timeout recovery)
-        - WAITING can go to RESPONDING for playback of prebuffered audio
+        - PROCESSING states can go to each other or to the next logical state
+        - PROCESSING* states are compatible with older PROCESSING state for backward compatibility
         """
         # Allow these universal transitions
         if next_state in ["IDLE", "ERROR", "WAITING"]:
             return True
             
-        # Handle the normal flow with some additions
+        # Handle the normal flow with refined processing states
         valid_transitions = {
-            "IDLE": ["LISTENING", "WAITING", "PROCESSING", "RESPONDING"],
-            "LISTENING": ["PROCESSING", "WAITING", "IDLE", "RESPONDING"],
-            "PROCESSING": ["RESPONDING", "PROCESSING", "WAITING", "IDLE", "LISTENING", "ERROR"],
+            "IDLE": ["LISTENING", "WAITING", "PROCESSING", "PROCESSING_STT", "RESPONDING"],
+            "LISTENING": ["PROCESSING", "PROCESSING_STT", "WAITING", "IDLE", "RESPONDING"],
+            
+            # Generic PROCESSING can go to any state (for backward compatibility)
+            "PROCESSING": ["RESPONDING", "PROCESSING", "PROCESSING_STT", "PROCESSING_LLM", 
+                          "PROCESSING_TTS", "WAITING", "IDLE", "LISTENING", "ERROR"],
+            
+            # Granular processing states
+            "PROCESSING_STT": ["PROCESSING_LLM", "PROCESSING", "RESPONDING", "WAITING", "ERROR"],
+            "PROCESSING_LLM": ["PROCESSING_TTS", "PROCESSING", "RESPONDING", "WAITING", "ERROR"],
+            "PROCESSING_TTS": ["RESPONDING", "PROCESSING", "WAITING", "ERROR"],
+            
             "RESPONDING": ["WAITING", "IDLE", "ERROR"],
-            "WAITING": ["LISTENING", "IDLE", "PROCESSING", "RESPONDING"],
-            "ERROR": ["IDLE", "WAITING", "PROCESSING", "LISTENING", "RESPONDING"]
+            "WAITING": ["LISTENING", "IDLE", "PROCESSING", "PROCESSING_STT", "RESPONDING"],
+            "ERROR": ["IDLE", "WAITING", "PROCESSING", "PROCESSING_STT", "LISTENING", "RESPONDING"]
         }
         
         return next_state in valid_transitions.get(current, [])
@@ -280,11 +295,7 @@ class StateManager:
         Args:
             session_id: The session ID experiencing potential deadlock
             new_state: The state we're attempting to transition to
-            timeout: The lock acquisition timeout (increased to 5.0 seconds)
-        """
-        """
-        Improved deadlock detection and resolution.
-        Ensures conversations can continue even after state transition problems.
+            timeout: The lock acquisition timeout
         """
         try:
             # Wait for the timeout period plus a buffer
@@ -321,13 +332,13 @@ class StateManager:
                 except Exception as broadcast_error:
                     self.logger.error(f"Error broadcasting forced state change: {broadcast_error}")
                 
-                # If we've been stuck in PROCESSING for too long, force to WAITING
-                if previous_state == "PROCESSING" and new_state == "PROCESSING":
-                    self.logger.warning(f"Detected potential hang in PROCESSING state for {session_id}")
+                # If we've been stuck in a processing state for too long, force to WAITING
+                if previous_state.startswith("PROCESSING") and new_state.startswith("PROCESSING"):
+                    self.logger.warning(f"Detected potential hang in processing state for {session_id}")
                     try:
                         session.state = "WAITING"
                         await self._broadcast_state_change(
-                            session_id, "PROCESSING", "WAITING", 
+                            session_id, previous_state, "WAITING", 
                             {"message": "Ready for next question", "forced_recovery": True}
                         )
                         self.logger.info(f"Forced recovery to WAITING state for {session_id}")

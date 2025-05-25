@@ -2,7 +2,7 @@
 
 ## Title and Overview
 
-The State Management component of the VR Interview System is responsible for maintaining and controlling the conversation state for each user session. It implements a state machine pattern that ensures orderly progression through the interview process. The state manager tracks the current state of each session, validates state transitions, prevents invalid state changes, and communicates state updates to clients. It includes mechanisms to prevent deadlocks and handle error recovery.
+The State Management component of the VR Interview System is responsible for maintaining and controlling the conversation state for each user session. It implements a state machine pattern that ensures orderly progression through the interview process. The state manager tracks the current state of each session, validates state transitions, prevents invalid state changes, and communicates state updates to clients. It includes mechanisms to prevent deadlocks and handle error recovery with sophisticated fallback strategies.
 
 ## Architecture
 
@@ -15,32 +15,44 @@ The state management system interacts with the following components:
 - WebSocket Server: Receives state change broadcasts
 - Error Handler: For error recovery
 - LLM Client: Uses state information for contextual responses
+- Enhanced Stream Processor: Uses state transitions for processing pipeline
 
 ### State Flow Diagram
 ```
-┌───────┐    listen     ┌──────────┐     process    ┌───────────┐
-│ IDLE  │───────────────►LISTENING │────────────────►PROCESSING │
-└───┬───┘               └──────────┘                └─────┬─────┘
-    │                                                     │
-    │                                                     │
-    │                                           respond   │
-    │       ┌───────────┐              ┌───────────────◄─┘
-    │       │  ERROR    │              │
-    │       └─────┬─────┘              │
-    │             │         recovery   │
-    │             └────────────────────┤
-    │                                  │
-    │                                  ▼
-    │                      ┌────────────────┐
-    │         wait         │   RESPONDING   │
-    └─────────────◄────────┤                │
-                  complete └────────┬───────┘
-                              │     │
-                              │     │
-                              ▼     │
-                       ┌────────────┴───┐
-                       │    WAITING     │
-                       └────────────────┘
+                                     ┌────────────────┐
+                                     │      IDLE      │
+                                     └───────┬────────┘
+                                             │
+                                             ▼
+┌─────────────┐             ┌────────────────────────┐
+│    ERROR    │◄────────────┤      LISTENING         │
+└───────┬─────┘             └────────────┬───────────┘
+        │                                │
+        │                                ▼
+        │                   ┌────────────────────────┐
+        │                   │     PROCESSING_STT     │
+        │                   └────────────┬───────────┘
+        │                                │
+        │                                ▼
+        │                   ┌────────────────────────┐
+        │                   │     PROCESSING_LLM     │
+        │                   └────────────┬───────────┘
+        │                                │
+        │                                ▼
+        │                   ┌────────────────────────┐
+        │                   │     PROCESSING_TTS     │
+        │                   └────────────┬───────────┘
+        │                                │
+        │                                ▼
+        │                   ┌────────────────────────┐
+        │                   │      RESPONDING        │
+        └───────────────────►                        │
+                  recovery  └────────────┬───────────┘
+                                         │
+                                         ▼
+                              ┌────────────────────────┐
+                              │        WAITING         │
+                              └────────────────────────┘
 ```
 
 ## Key Classes/Functions
@@ -51,7 +63,11 @@ class States(Enum):
     """Enumeration of possible states for the conversation"""
     IDLE = auto()
     LISTENING = auto()
-    PROCESSING = auto()
+    # Granular processing states
+    PROCESSING = auto()          # Generic processing state (for backward compatibility)
+    PROCESSING_STT = auto()      # Specifically transcribing speech to text
+    PROCESSING_LLM = auto()      # Generating response with the language model 
+    PROCESSING_TTS = auto()      # Converting text response to audio
     RESPONDING = auto()
     WAITING = auto()
     ERROR = auto()
@@ -64,17 +80,17 @@ class StateManager:
     Manages the state machine for conversation sessions.
     
     This class handles state transitions and ensures they follow the defined flow:
-    IDLE → LISTENING → PROCESSING → RESPONDING → WAITING → (repeat)
+    IDLE → LISTENING → PROCESSING_STT → PROCESSING_LLM → PROCESSING_TTS → RESPONDING → WAITING → (repeat)
     
     It also handles broadcasting state changes to connected clients.
     """
 ```
 
 #### Key Methods
-- **`__init__()`**: Initializes state tracking structures
+- **`__init__()`**: Initializes state tracking structures and deadlock prevention
 - **`create_session()`**: Creates a new session with initial IDLE state
 - **`end_session()`**: Cleans up session resources
-- **`transition_state()`**: Transitions a session to a new state with validation
+- **`transition_state()`**: Transitions a session to a new state with validation and deadlock prevention
 - **`force_transition()`**: Forces a state transition without validation (emergency recovery)
 - **`get_session()`**: Retrieves a session object by ID
 - **`get_session_state()`**: Gets the current state for a session
@@ -105,7 +121,7 @@ class Session:
 
 ### State Transition Flow
 
-The typical state transition flow follows this pattern:
+The state transition flow has been improved with granular processing states for better progress tracking:
 
 1. **IDLE**: Initial state, ready for conversation
    ```python
@@ -121,58 +137,150 @@ The typical state transition flow follows this pattern:
    })
    ```
 
-3. **PROCESSING**: Processing input and generating response
+3. **PROCESSING_STT**: Transcribing speech to text
    ```python
-   await state_manager.transition_state(session_id, "PROCESSING", {
-       "message": "Transcribing audio"
+   await state_manager.transition_state(session_id, "PROCESSING_STT", {
+       "message": "Transcribing your speech to text",
+       "progress": 0.0
    })
    
-   # Later in the processing pipeline:
-   await state_manager.transition_state(session_id, "PROCESSING", {
-       "message": "Generating response",
-       "transcript": transcript,
-       "stage": interaction_stage
+   # Later, when transcription completes:
+   await state_manager.transition_state(session_id, "PROCESSING_STT", {
+       "message": "Speech transcribed successfully",
+       "progress": 1.0
    })
    ```
 
-4. **RESPONDING**: Sending audio response to client
+4. **PROCESSING_LLM**: Generating response with language model
+   ```python
+   await state_manager.transition_state(session_id, "PROCESSING_LLM", {
+       "message": "Generating response to your question",
+       "transcript": transcript,
+       "stage": interaction_stage,
+       "progress": 0.0
+   })
+   
+   # Progress updates can be sent during LLM processing:
+   await state_manager.transition_state(session_id, "PROCESSING_LLM", {
+       "message": "Still thinking about your question...",
+       "progress": 0.4
+   })
+   
+   # When LLM processing completes:
+   await state_manager.transition_state(session_id, "PROCESSING_LLM", {
+       "message": "Response generated successfully",
+       "progress": 1.0
+   })
+   ```
+
+5. **PROCESSING_TTS**: Converting text to speech
+   ```python
+   await state_manager.transition_state(session_id, "PROCESSING_TTS", {
+       "message": "Converting response to speech",
+       "progress": 0.0
+   })
+   
+   # When TTS completes:
+   await state_manager.transition_state(session_id, "PROCESSING_TTS", {
+       "message": "Audio generation complete",
+       "progress": 1.0
+   })
+   ```
+
+6. **RESPONDING**: Sending audio response to client
    ```python
    await state_manager.transition_state(session_id, "RESPONDING", {
        "message": "Playing response"
    })
    ```
 
-5. **WAITING**: Waiting for next user input
+7. **WAITING**: Waiting for next user input
    ```python
    await state_manager.transition_state(session_id, "WAITING", {
        "message": "Waiting for user input"
    })
    ```
 
-6. **ERROR**: Error state with recovery mechanisms
+8. **ERROR**: Error state with recovery mechanisms
    ```python
    await state_manager.transition_state(session_id, "ERROR", {
-       "error": str(e)
+       "message": "Audio generation error: timeout",
+       "error_type": "TTS_ERROR"
    })
    ```
 
 ### Error Recovery Patterns
 
-When an error occurs, the system can recover by forcing a state transition:
+The system has enhanced error recovery with specific handling for different error types:
 
 ```python
+# Using the error handler for TTS errors
+await self.error_handler.handle_error(
+    ErrorHandler.TTS_ERROR,
+    session_id,
+    e,
+    {"websocket": websocket, "text_response": response}
+)
+
 # Force transition back to WAITING state
 await state_manager.force_transition(session_id, "WAITING", {
-    "message": "Ready for next question",
-    "recovery": True
+    "message": "Ready for next question after error recovery",
+    "error_recovered": True,
+    "error_type": "TTS_ERROR"
 })
+```
+
+### Progressive Updates
+
+The system now supports progressive updates during long-running operations:
+
+```python
+# Start a progressive update task during LLM processing
+heartbeat_task = asyncio.create_task(
+    self._send_progressive_updates(session_id, websocket)
+)
+
+# In the update task:
+update_messages = [
+    "I'm thinking about your question...",
+    "Still processing your question...",
+    "This is a complex question, giving it some thought...",
+    "Almost ready with a response...",
+    "Finalizing my thoughts on this..."
+]
+progress_values = [0.2, 0.4, 0.6, 0.8, 0.9]
+
+for i in range(len(update_messages)):
+    await asyncio.sleep(5.0)
+    await state_manager.transition_state(session_id, "PROCESSING_LLM", {
+        "message": update_messages[i % len(update_messages)],
+        "progress": progress_values[i % len(progress_values)]
+    })
 ```
 
 ## Implementation Details
 
+### Granular Processing States
+
+The state management system now includes finer-grained processing states for better user experience and error tracking:
+
+```python
+# Granular processing states
+PROCESSING = auto()          # Generic processing state (for backward compatibility)
+PROCESSING_STT = auto()      # Specifically transcribing speech to text
+PROCESSING_LLM = auto()      # Generating response with the language model 
+PROCESSING_TTS = auto()      # Converting text response to audio
+```
+
+Each state represents a specific processing stage, allowing:
+- More precise progress tracking
+- More targeted error recovery
+- Better user feedback about processing status
+- Improved timeout handling for specific processing stages
+
 ### State Transition Validation
 
-The state manager validates transitions to ensure they follow the expected flow:
+The state manager validates transitions with support for the new granular states:
 
 ```python
 def _is_valid_transition(self, current, next_state):
@@ -180,36 +288,51 @@ def _is_valid_transition(self, current, next_state):
     Validate that a state transition follows the allowed flow.
     
     Modified with more flexible transitions to prevent deadlocks:
+    - Any state can transition to ERROR state
     - Any state can transition to WAITING (helps recover from errors)
-    - PROCESSING can go to any state (helps with LLM timeout recovery)
-    - WAITING can go to RESPONDING for playback of prebuffered audio
+    - PROCESSING states can go to each other or to the next logical state
+    - PROCESSING* states are compatible with older PROCESSING state for backward compatibility
     """
     # Allow these universal transitions
     if next_state in ["IDLE", "ERROR", "WAITING"]:
         return True
         
-    # Handle the normal flow with some additions
+    # Handle the normal flow with refined processing states
     valid_transitions = {
-        "IDLE": ["LISTENING", "WAITING", "PROCESSING", "RESPONDING"],
-        "LISTENING": ["PROCESSING", "WAITING", "IDLE", "RESPONDING"],
-        "PROCESSING": ["RESPONDING", "PROCESSING", "WAITING", "IDLE", "LISTENING", "ERROR"],
+        "IDLE": ["LISTENING", "WAITING", "PROCESSING", "PROCESSING_STT", "RESPONDING"],
+        "LISTENING": ["PROCESSING", "PROCESSING_STT", "WAITING", "IDLE", "RESPONDING"],
+        
+        # Generic PROCESSING can go to any state (for backward compatibility)
+        "PROCESSING": ["RESPONDING", "PROCESSING", "PROCESSING_STT", "PROCESSING_LLM", 
+                      "PROCESSING_TTS", "WAITING", "IDLE", "LISTENING", "ERROR"],
+        
+        # Granular processing states
+        "PROCESSING_STT": ["PROCESSING_LLM", "PROCESSING", "RESPONDING", "WAITING", "ERROR"],
+        "PROCESSING_LLM": ["PROCESSING_TTS", "PROCESSING", "RESPONDING", "WAITING", "ERROR"],
+        "PROCESSING_TTS": ["RESPONDING", "PROCESSING", "WAITING", "ERROR"],
+        
         "RESPONDING": ["WAITING", "IDLE", "ERROR"],
-        "WAITING": ["LISTENING", "IDLE", "PROCESSING", "RESPONDING"],
-        "ERROR": ["IDLE", "WAITING", "PROCESSING", "LISTENING", "RESPONDING"]
+        "WAITING": ["LISTENING", "IDLE", "PROCESSING", "PROCESSING_STT", "RESPONDING"],
+        "ERROR": ["IDLE", "WAITING", "PROCESSING", "PROCESSING_STT", "LISTENING", "RESPONDING"]
     }
     
     return next_state in valid_transitions.get(current, [])
 ```
 
-### Deadlock Prevention
+### Enhanced Deadlock Prevention
 
-The state manager implements a deadlock prevention mechanism that detects and resolves potential deadlocks:
+The state manager implements a more sophisticated deadlock prevention mechanism:
 
 ```python
 async def _handle_deadlock(self, session_id, new_state, timeout):
     """
     Improved deadlock detection and resolution.
     Ensures conversations can continue even after state transition problems.
+    
+    Args:
+        session_id: The session ID experiencing potential deadlock
+        new_state: The state we're attempting to transition to
+        timeout: The lock acquisition timeout
     """
     try:
         # Wait for the timeout period plus a buffer
@@ -238,21 +361,80 @@ async def _handle_deadlock(self, session_id, new_state, timeout):
                 f"Forced state transition after deadlock: {session_id}: {previous_state} to {new_state}"
             )
             
-            # If we've been stuck in PROCESSING for too long, force to WAITING
-            if previous_state == "PROCESSING" and new_state == "PROCESSING":
-                session.state = "WAITING"
+            # Try to broadcast the state change
+            try:
                 await self._broadcast_state_change(
-                    session_id, "PROCESSING", "WAITING", 
-                    {"message": "Ready for next question", "forced_recovery": True}
+                    session_id, previous_state, new_state, {"forced": True}
                 )
-    except asyncio.CancelledError:
-        # Task was cancelled normally
-        pass
+            except Exception as broadcast_error:
+                self.logger.error(f"Error broadcasting forced state change: {broadcast_error}")
+            
+            # If we've been stuck in a processing state for too long, force to WAITING
+            if previous_state.startswith("PROCESSING") and new_state.startswith("PROCESSING"):
+                self.logger.warning(f"Detected potential hang in processing state for {session_id}")
+                try:
+                    session.state = "WAITING"
+                    await self._broadcast_state_change(
+                        session_id, previous_state, "WAITING", 
+                        {"message": "Ready for next question", "forced_recovery": True}
+                    )
+                    self.logger.info(f"Forced recovery to WAITING state for {session_id}")
+                except Exception as recovery_error:
+                    self.logger.error(f"Error during forced recovery: {recovery_error}")
+                
+        except asyncio.CancelledError:
+            # Task was cancelled normally
+            pass
+        except Exception as e:
+            self.logger.error(f"Error in deadlock handler: {e}")
+```
+
+### Redundant Update Prevention
+
+The state manager now prevents redundant updates to improve performance:
+
+```python
+# Detect redundant processing state updates
+if previous_state == new_state:
+    # For processing states, limit updates to be less frequent
+    if new_state.startswith("PROCESSING"):
+        # Track updates per processing type to avoid redundancy
+        last_update_key = f"last_{new_state.lower()}_update"
+        last_update_time = getattr(session, last_update_key, 0)
+        current_time = time.time()
+        
+        # Only allow updates every 3 seconds unless they contain progress info
+        if (current_time - last_update_time < 3.0 and 
+            (not metadata or "progress" not in metadata)):
+            self.logger.debug(
+                f"Limiting {new_state} state updates for {session_id}, "
+                f"last update was {current_time - last_update_time:.1f}s ago"
+            )
+            return True
+        
+        # Update the last processing update time
+        setattr(session, last_update_key, current_time)
+    # For other states, check if metadata has meaningful changes
+    elif metadata and "progress" not in metadata:
+        # For progress updates, we still want to show them
+        # But avoid redundant state broadcasts that have no meaningful changes
+        redundant = True
+        
+        # Check if there's any meaningful difference in metadata
+        if metadata and session.metadata:
+            for key, value in metadata.items():
+                if key not in session.metadata or session.metadata[key] != value:
+                    redundant = False
+                    break
+        
+        if redundant:
+            self.logger.debug(f"Skipping redundant state update for {session_id}: {new_state}")
+            return True
 ```
 
 ### State Change Broadcasting
 
-The state manager broadcasts state changes to the client:
+The state manager broadcasts state changes to the client with improved error handling:
 
 ```python
 async def _broadcast_state_change(self, session_id, previous, current, metadata):
@@ -279,241 +461,246 @@ async def _broadcast_state_change(self, session_id, previous, current, metadata)
         self.logger.error(f"Error broadcasting state change: {e}")
 ```
 
-### Session Context Management
-
-The Session class maintains context for the LLM:
-
-```python
-def get_context(self):
-    """
-    Get formatted conversation context for the LLM
-    
-    Returns a list of conversation turns formatted for the LLM context
-    """
-    context = []
-    for interaction in self.history:
-        context.append({
-            "role": "user",
-            "content": interaction["user_input"]
-        })
-        context.append({
-            "role": "assistant",
-            "content": interaction["system_response"]
-        })
-    return context
-```
-
 ## Configuration
 
-The State Management system does not have a separate configuration file, but it does leverage these key settings:
+The State Management system has the following configurable parameters:
 
-1. **Lock Timeout**: The maximum time to wait for acquiring a state lock (default: 2.0 seconds)
+1. **Lock Timeout**: The maximum time to wait for acquiring a state lock (default: 5.0 seconds)
 2. **Session Expiration**: The time after which inactive sessions are considered expired (default: 1800 seconds / 30 minutes)
+3. **Deadlock Resolution Timeout**: Time after which deadlocks are forcibly resolved (equals lock timeout + 0.5 seconds)
+4. **Update Rate Limiting**: Minimum time between identical state updates (default: 3.0 seconds)
 
 ## Common Issues
 
 ### State Transition Issues
 
-1. **Invalid State Transitions**:
-   - **Symptoms**: Warning logs about invalid transitions, unexpected client behavior
-   - **Causes**: Concurrent operations attempting to change state in invalid ways
-   - **Solution**: State validation with flexible recovery paths
+1. **Processing State Hangs**:
+   - **Symptoms**: Session gets stuck in a PROCESSING_* state
+   - **Causes**: Long-running operations, task failures, network issues
+   - **Solution**: Granular state timeouts and forced transitions to WAITING state
 
-2. **State Deadlocks**:
-   - **Symptoms**: Session gets stuck in PROCESSING or other states
-   - **Causes**: Long-running operations, task failures without state updates
-   - **Solution**: Deadlock detection and forced state transitions
+2. **Redundant State Updates**:
+   - **Symptoms**: Excessive state updates for the same state
+   - **Causes**: Frequent progress updates, polling code
+   - **Solution**: Rate limiting for identical state updates with progress tracking
 
-3. **Race Conditions**:
-   - **Symptoms**: Duplicate or conflicting state updates
-   - **Causes**: Multiple asynchronous operations trying to update state
-   - **Solution**: State locks with timeouts to prevent blocking
+3. **Race Conditions Between Processing Stages**:
+   - **Symptoms**: State jumps unexpectedly between processing stages
+   - **Causes**: Asynchronous completion of different processing tasks
+   - **Solution**: Improved state transition validation with more flexible paths
 
 ### Session Management Issues
 
-1. **Session Leaks**:
-   - **Symptoms**: Server memory increases over time, performance degradation
-   - **Causes**: Connections close without proper cleanup
-   - **Solution**: Session expiration and cleanup mechanisms
+1. **Error Recovery Cascades**:
+   - **Symptoms**: Multiple error recoveries happen in sequence
+   - **Causes**: One error recovery triggering another issue
+   - **Solution**: Cooldown periods between recovery attempts and error tracking
 
-2. **Context Growth**:
-   - **Symptoms**: Responses becoming slower, context exceeding limits
-   - **Causes**: History accumulation without bounds
-   - **Solution**: Context truncation in the LLM client
+2. **Delayed TTS Response Handling**:
+   - **Symptoms**: Audio response arrives after timeout
+   - **Causes**: TTS service slowness but eventual completion
+   - **Solution**: Specialized recovery for delayed TTS responses
+
+3. **Client Capability Mismatches**:
+   - **Symptoms**: Client unable to handle certain state updates
+   - **Causes**: Version differences between client and server
+   - **Solution**: Client capability detection and adaptive state updates
 
 ## Code Examples
 
-### Creating a Session
+### Using Granular Processing States
 
 ```python
-def create_session(self, session_id, session):
-    """Initialize a new session with IDLE state"""
-    self.sessions[session_id] = session
-    self._state_locks[session_id] = asyncio.Lock()
-    self.logger.info(f"Created new session: {session_id}")
-    
-    # Set initial state
-    asyncio.create_task(
-        self.transition_state(session_id, "IDLE")
+# Start with STT processing
+await state_manager.transition_state(session_id, "PROCESSING_STT", {
+    "message": "Transcribing your speech to text",
+    "progress": 0.0
+})
+
+# Update with progress
+await state_manager.transition_state(session_id, "PROCESSING_STT", {
+    "message": "Speech transcribed successfully",
+    "progress": 1.0
+})
+
+# Move to LLM processing
+await state_manager.transition_state(session_id, "PROCESSING_LLM", {
+    "message": "Generating response to your question",
+    "transcript": transcript,
+    "progress": 0.0
+})
+
+# Progress updates during LLM
+await state_manager.transition_state(session_id, "PROCESSING_LLM", {
+    "message": "Still thinking about your question...",
+    "progress": 0.4
+})
+
+# Complete LLM processing
+await state_manager.transition_state(session_id, "PROCESSING_LLM", {
+    "message": "Response generated successfully",
+    "progress": 1.0
+})
+
+# Move to TTS processing
+await state_manager.transition_state(session_id, "PROCESSING_TTS", {
+    "message": "Converting response to speech",
+    "progress": 0.0
+})
+
+# Complete TTS processing
+await state_manager.transition_state(session_id, "PROCESSING_TTS", {
+    "message": "Audio generation complete",
+    "progress": 1.0
+})
+```
+
+### Handling TTS Errors with Fallback
+
+```python
+try:
+    # Generate speech with timeout (increased from 8 to 15 seconds)
+    tts_future = asyncio.create_task(
+        asyncio.to_thread(self.tts_service.synthesize, text)
     )
-```
-
-### Transitioning State
-
-```python
-async def transition_state(self, session_id, new_state, metadata=None, timeout=2.0):
-    """
-    Transition session to a new state and broadcast the change.
     
-    Uses locks with shorter timeouts to prevent blocking and improved deadlock prevention.
-    """
-    if session_id not in self.sessions:
-        # More helpful log message with the session ID to make it easier to debug
-        self.logger.error(f"Cannot transition state for unknown session: {session_id} (to state {new_state})")
-        return False
+    # Add timeout to prevent hanging
+    audio_response = await asyncio.wait_for(tts_future, timeout=15.0)
     
-    # Set up a task to handle deadlock timeout if needed
-    if session_id in self._deadlock_timeouts:
-        self._deadlock_timeouts[session_id].cancel()
-        
-    deadlock_task = asyncio.create_task(
-        self._handle_deadlock(session_id, new_state, timeout)
-    )
-    self._deadlock_timeouts[session_id] = deadlock_task
-        
-    try:
-        # Acquire lock with timeout to prevent blocking indefinitely
-        lock_acquired = False
-        try:
-            # Use wait_for with a timeout to avoid deadlocks
-            await asyncio.wait_for(
-                self._state_locks[session_id].acquire(),
-                timeout=timeout
-            )
-            lock_acquired = True
-        except asyncio.TimeoutError:
-            self.logger.warning(
-                f"Timed out waiting for state lock on {session_id}. "
-                f"Forcing transition to {new_state}."
-            )
-            # Force the transition by creating a new lock
-            self._state_locks[session_id] = asyncio.Lock()
-            
-        try:
-            session = self.sessions.get(session_id)
-            if not session:
-                self.logger.warning(f"Session {session_id} no longer exists during transition")
-                return False
-                
-            previous_state = session.state
-            
-            # Validate the state transition
-            if not self._is_valid_transition(previous_state, new_state):
-                self.logger.warning(
-                    f"Invalid state transition: {previous_state} to {new_state}"
-                )
-                # Allow the transition in production to prevent deadlocks
-            
-            # Update the session state
-            session.state = new_state
-            session.last_updated = time.time()
-            
-            # Add metadata if provided
-            if metadata:
-                session.metadata.update(metadata)
-                
-            self.logger.info(f"State transition: {session_id}: {previous_state} to {new_state}")
-            
-            # Cancel the deadlock timeout task
-            if deadlock_task and not deadlock_task.done():
-                deadlock_task.cancel()
-            
-            # Broadcast state change
-            await self._broadcast_state_change(session_id, previous_state, new_state, metadata)
-            
-            return True
-        finally:
-            # Only release the lock if we acquired it
-            if lock_acquired:
-                self._state_locks[session_id].release()
-            
-    except Exception as e:
-        self.logger.error(f"Error during state transition: {e}")
-        return False
-```
-
-### Force Transition for Recovery
-
-```python
-async def force_transition(self, session_id, new_state, metadata=None):
-    """
-    Force a state transition without waiting for locks.
-    For emergency recovery only.
-    """
-    if session_id not in self.sessions:
-        self.logger.error(f"Cannot force transition for unknown session: {session_id}")
-        return False
-        
-    try:
-        session = self.sessions[session_id]
-        previous_state = session.state
-        
-        # Force the state change directly
-        session.state = new_state
-        session.last_updated = time.time()
-        
-        # Update metadata if provided
-        if metadata:
-            session.metadata.update(metadata)
-        else:
-            metadata = {}
-            
-        # Add forced flag to metadata
-        metadata["forced"] = True
-        metadata["recovery"] = True
-        metadata["message"] = metadata.get("message", "Forced state transition for recovery")
-        
-        self.logger.warning(
-            f"Forced state transition: {session_id}: {previous_state} to {new_state}"
-        )
-        
-        # Try to broadcast the change
-        try:
-            await self._broadcast_state_change(session_id, previous_state, new_state, metadata)
-        except Exception as e:
-            self.logger.error(f"Error broadcasting forced state change: {e}")
-            
-        return True
-    except Exception as e:
-        self.logger.error(f"Error during forced state transition: {e}")
-        return False
-```
-
-### Session Management
-
-```python
-def add_interaction(self, user_input, system_response):
-    """
-    Record a user-system interaction in the conversation history
-    """
-    interaction = {
-        "timestamp": datetime.now().isoformat(),
-        "user_input": user_input,
-        "system_response": system_response
+    # Update TTS progress to complete
+    await self.state_manager.transition_state(session_id, "PROCESSING_TTS", {
+        "message": "Audio generation complete",
+        "progress": 1.0
+    })
+    
+except asyncio.TimeoutError:
+    self.logger.warning(f"TTS timeout for session {session_id}")
+    
+    # Transition to ERROR state
+    await self.state_manager.transition_state(session_id, "ERROR", {
+        "message": "Audio generation timed out",
+        "error_type": "TTS_TIMEOUT"
+    })
+    
+    # Send text-only response as fallback
+    fallback_message = {
+        "type": "text_response",
+        "session_id": session_id,
+        "timestamp": time.time(),
+        "text": text,
+        "message": "Audio conversion timed out, showing text instead"
     }
-    self.history.append(interaction)
-    self.last_updated = time.time()
     
-def reset(self):
+    try:
+        await websocket.send(json.dumps(fallback_message))
+        
+        # Update state
+        await self.state_manager.transition_state(session_id, "WAITING", {
+            "message": "Waiting for user input after fallback"
+        })
+    except Exception as e:
+        self.logger.error(f"Error sending fallback message: {e}")
+```
+
+### Handling Delayed LLM Responses
+
+```python
+async def _handle_delayed_llm_response(self, session_id, llm_future, websocket):
     """
-    Reset the conversation history
-    """
-    self.history = []
-    self.last_updated = time.time()
+    Handle LLM response that completes after the timeout
     
-def is_expired(self, timeout_seconds=1800):  # 30 minutes default
+    Args:
+        session_id: Session identifier
+        llm_future: Future for the LLM response
+        websocket: WebSocket connection
     """
-    Check if the session has expired due to inactivity
-    """
-    return (time.time() - self.last_updated) > timeout_seconds
+    try:
+        # Wait for the LLM response (which is still running)
+        response = await llm_future
+        
+        # Check if the session is still active
+        session = self.state_manager.get_session(session_id)
+        if not session:
+            self.logger.warning(f"Session {session_id} no longer exists for delayed response")
+            return
+            
+        # Add to session context if method exists
+        if hasattr(session, 'add_assistant_message'):
+            session.add_assistant_message(response)
+        
+        # Update the transcript with the delayed response
+        await websocket.send(json.dumps({
+            "type": "transcript_update",
+            "session_id": session_id,
+            "timestamp": time.time(),
+            "transcript": response,
+            "source": "llm",
+            "delayed": True
+        }))
+        
+        # Generate TTS for the delayed response
+        try:
+            # Transition to PROCESSING_TTS state for delayed response
+            await self.state_manager.transition_state(session_id, "PROCESSING_TTS", {
+                "message": "Converting delayed response to speech",
+                "delayed": True
+            })
+            
+            audio_response = await asyncio.to_thread(
+                self.tts_service.synthesize, response, session_id
+            )
+            
+            # Send audio response if we're in a state where it makes sense
+            current_state = session.state if hasattr(session, 'state') else None
+            if current_state in ["WAITING", "IDLE"]:
+                # Update state to RESPONDING
+                await self.state_manager.transition_state(session_id, "RESPONDING", {
+                    "message": "Playing delayed response",
+                    "delayed": True
+                })
+                
+                # Send direct audio
+                await websocket.send(json.dumps({
+                    "type": "audio_response",
+                    "session_id": session_id,
+                    "timestamp": time.time(),
+                    "format": "wav",
+                    "data": base64.b64encode(audio_response).decode('utf-8'),
+                    "text": response,
+                    "delayed": True
+                }))
+                
+                # Return to WAITING when done
+                await self.state_manager.transition_state(session_id, "WAITING", {
+                    "message": "Waiting for user input"
+                })
+        except Exception as e:
+            self.logger.error(f"Error processing delayed TTS: {e}")
+    except Exception as e:
+        self.logger.error(f"Error handling delayed LLM response: {e}")
+```
+
+### Safety Timeout Mechanism
+
+```python
+async def _safety_timeout(self, session_id: str, timeout_seconds: float):
+    """Force transition to WAITING state if processing takes too long"""
+    try:
+        await asyncio.sleep(timeout_seconds)
+        
+        # Check current state
+        current_state = self.state_manager.get_session_state(session_id)
+        
+        # If still in PROCESSING state after timeout, force transition to WAITING
+        if current_state.startswith("PROCESSING"):
+            self.logger.warning(f"Safety timeout triggered for session {session_id}")
+            await self.state_manager.transition_state(session_id, "WAITING", {
+                "message": "Ready for next question (timeout recovery)"
+            })
+            
+    except asyncio.CancelledError:
+        # Task was cancelled normally
+        pass
+    except Exception as e:
+        self.logger.error(f"Error in safety timeout: {e}")
 ```

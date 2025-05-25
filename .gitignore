@@ -1,23 +1,119 @@
-# Python virtual environment
-.venv/
-venv/
+# Python
 __pycache__/
 *.py[cod]
+*$py.class
 *.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+PIPFILE.lock
 
-# Logs and generated data
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Logs
 logs/
 *.log
+server_diagnostic.log
+
+# Data and Cache
 data/audio/
+data/conversations/
+data/cache/
 audio_out/
+voice_test_results/
+benchmark_results/
 
-# Environment-specific files
+# Temporary files
+*.tmp
+*.temp
+*.cache
+
+# Environment variables
 .env
+.env.local
+.env.*.local
 
-# IDE files
+# IDE and Editor files
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
 
-# Operating system files
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+desktop.ini
+
+# Backup files
+*.bak
+*.backup
+backups/
+
+# Test coverage
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+cover/
+*.cover
+*.py,cover
+.hypothesis/
+
+# Documentation builds
+docs/_build/
+docs/.doctrees/
+
+# Package files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Model files (large files)
+models/
+*.pth
+*.pt
+*.onnx
+*.bin
+*.safetensors
+
+# Audio models
+whisper_models/
+
+# Config overrides (keep the template)
+config/config.override.json
+config/config.local.json
