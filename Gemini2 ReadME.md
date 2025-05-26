@@ -47,44 +47,44 @@ The system consists of three main components:
 ```mermaid
 graph TB
     subgraph "VR Client (Unity)"
-        A[VR Headset] --> B[Unity Application]
-        B --> C[WebSocket Client]
-        B --> D[Audio Capture]
-        B --> E[Avatar System]
-        B --> F[UI System]
+        A["VR Headset"] --> B["Unity Application"]
+        B --> C["WebSocket Client"]
+        B --> D["Audio Capture"]
+        B --> E["Avatar System"]
+        B --> F["UI System"]
     end
 
     subgraph "Network Layer"
-        G[WebSocket Connection<br/>Port 8765]
+        G["WebSocket Connection<br/>Port 8765"]
     end
 
     subgraph "Python Server (server_fixed.py)"
-        H[Enhanced Server] --> I[WebSocket Server]
-        I --> J[State Manager (manager_fixed.py)]
-        I --> K[Stream Processor (enhanced_stream_processor.py)]
+        H["Enhanced Server"] --> I["WebSocket Server"]
+        I --> J["State Manager (manager_fixed.py)"]
+        I --> K["Stream Processor (enhanced_stream_processor.py)"]
 
         subgraph "Audio Services"
-            L[STT Service<br/>(Whisper - stt.py, stt_wrapper.py)]
-            M[TTS Service<br/>(AllTalk/gTTS - tts.py, alltalk_tts_direct.py)]
+            L["STT Service<br/>(Whisper - stt.py, stt_wrapper.py)"]
+            M["TTS Service<br/>(AllTalk/gTTS - tts.py, alltalk_tts_direct.py)"]
         end
 
         subgraph "AI Services"
-            N[LLM Client<br/>(Ollama_client_fixed.py)]
-            O[Scenario Manager (job_interview.py)]
+            N["LLM Client<br/>(Ollama_client_fixed.py)"]
+            O["Scenario Manager (job_interview.py)"]
         end
 
         subgraph "Support Services"
-            P[Error Handler (error_handler.py)]
-            Q[Heartbeat Service (heartbeat.py)]
-            R[Cache Manager]
-            S_Config[Configuration (config.py)]
+            P["Error Handler (error_handler.py)"]
+            Q["Heartbeat Service (heartbeat.py)"]
+            R["Cache Manager"]
+            S_Config["Configuration (config.py)"]
         end
     end
 
     subgraph "External Services"
-        S_Ext[Ollama Server<br/>(Mistral LLM)]
-        T_Ext[AllTalk TTS Server]
-        U_Ext[CUDA/Whisper STT]
+        S_Ext["Ollama Server<br/>(Mistral LLM)"]
+        T_Ext["AllTalk TTS Server"]
+        U_Ext["CUDA/Whisper STT"]
     end
 
     C -.->|WebSocket| G
