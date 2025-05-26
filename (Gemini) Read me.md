@@ -1,6 +1,3 @@
-Here is an updated README for your GitHub repository:
-
-```markdown
 # VR Interview System
 
 A virtual reality job interview practice system with a conversational AI interviewer powered by local language models. This system is stable and ready for production use. All critical bugs related to AI personality, state machine loops, and session management have been resolved.
@@ -19,7 +16,7 @@ The system consists of three main components:
 
 ### Architecture Diagram
 
-```
+
                                ┌─────────────────┐
                                │   Client (VR)   │
                                └────────┬────────┘
