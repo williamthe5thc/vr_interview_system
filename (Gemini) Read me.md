@@ -15,7 +15,7 @@ The system consists of three main components:
 3.  **LLM Service (Ollama)**: Processes natural language via local models such as Phi, Mistral, or other compatible models.
 
 ### Architecture Diagram
-
+```
 
                                ┌─────────────────┐
                                │   Client (VR)   │
