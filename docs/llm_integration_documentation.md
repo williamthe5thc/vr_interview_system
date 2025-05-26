@@ -6,7 +6,7 @@ The LLM Integration component provides the intelligent response generation capab
 
 ## Architecture
 
-The LLM Integration component is built around the `EnhancedOllamaClient` class, which handles communication with the Ollama API. The system implements several optimizations:
+The LLM Integration component is built around the `OllamaClient` class (located in `services.llm.Ollama_client`), which handles communication with the Ollama API. The system implements several optimizations:
 
 1. **Advanced Caching System**: Stores and reuses responses with sophisticated prioritization
 2. **Intelligent Context Management**: Preserves relevant conversation history with heuristic pruning
@@ -50,10 +50,10 @@ The LLM Integration component is built around the `EnhancedOllamaClient` class, 
 
 ## Key Classes/Functions
 
-### EnhancedOllamaClient
+### OllamaClient
 
 ```python
-class EnhancedOllamaClient:
+class OllamaClient:
     """
     Enhanced client for interacting with the Ollama API.
     
@@ -683,7 +683,7 @@ Key configuration options:
 
 ## Code Examples
 
-### Using the EnhancedOllamaClient in WebSocketServer
+### Using the OllamaClient in WebSocketServer
 
 ```python
 # In WebSocketServer.process_audio_pipeline

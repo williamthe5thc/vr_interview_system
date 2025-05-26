@@ -666,6 +666,8 @@ None (asynchronous function)
 **Purpose:**  
 Initializes the Ollama client with configuration and improved caching.
 
+**Note:** This class is imported from `services.llm.Ollama_client` (capital O in filename).
+
 **Parameters:**  
 - `url` (str): The URL of the Ollama API
 - `model` (str): The model to use (e.g., "mistral:latest")
