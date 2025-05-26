@@ -1,4 +1,3 @@
-````markdown
 # 🎤 VR Interview System
 
 > **AI-Powered Virtual Reality Interview Practice Platform**
